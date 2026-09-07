@@ -54,6 +54,15 @@ export const createLinkSchema = z.object({
   expiresAt: futureDateSchema.optional(),
 });
 
+/**
+ * Guest shortening accepts a URL and nothing else. Custom aliases and expiry
+ * control are account features, so the guest endpoint cannot expose them even
+ * if a caller sends them.
+ */
+export const shortenGuestSchema = z.object({
+  url: destinationUrlSchema,
+});
+
 export const updateLinkSchema = z
   .object({
     url: destinationUrlSchema.optional(),
@@ -81,6 +90,7 @@ export const loginSchema = z.object({
 });
 
 export type CreateLinkInput = z.infer<typeof createLinkSchema>;
+export type ShortenGuestInput = z.infer<typeof shortenGuestSchema>;
 export type UpdateLinkInput = z.infer<typeof updateLinkSchema>;
 export type ListLinksQuery = z.infer<typeof listLinksQuerySchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createLinkSchema,
+  shortenGuestSchema,
   customAliasSchema,
   destinationUrlSchema,
   listLinksQuerySchema,
@@ -124,5 +125,24 @@ describe('listLinksQuerySchema', () => {
   it('parses isActive from a query-string boolean', () => {
     expect(listLinksQuerySchema.parse({ isActive: 'true' }).isActive).toBe(true);
     expect(listLinksQuerySchema.parse({ isActive: 'false' }).isActive).toBe(false);
+  });
+});
+
+describe('shortenGuestSchema', () => {
+  it('accepts a url', () => {
+    expect(shortenGuestSchema.safeParse({ url: 'https://example.com' }).success).toBe(true);
+  });
+
+  it('strips a customAlias rather than honouring it', () => {
+    // Guests must not be able to claim aliases by sending the field anyway.
+    const result = shortenGuestSchema.parse({
+      url: 'https://example.com',
+      customAlias: 'premium-name',
+    });
+    expect(result).toEqual({ url: 'https://example.com' });
+  });
+
+  it('rejects a non-http scheme just like the authenticated schema', () => {
+    expect(shortenGuestSchema.safeParse({ url: 'javascript:alert(1)' }).success).toBe(false);
   });
 });

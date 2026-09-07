@@ -33,6 +33,16 @@ export const RESERVED_SHORT_CODES: readonly string[] = [
   'sitemap.xml',
 ];
 
+/**
+ * Shape a path segment must have to be worth looking up.
+ *
+ * Used by the redirect route as a cheap gate: anything failing this is a 404
+ * without touching Redis or Postgres, so favicon requests, scanner probes and
+ * stray asset paths cost nothing. Distinct from the alias validator, which
+ * needs per-rule error messages rather than a single yes/no.
+ */
+export const SHORT_CODE_PATTERN = /^[a-zA-Z0-9_-]{3,32}$/;
+
 export const CUSTOM_ALIAS_MIN_LENGTH = 3;
 export const CUSTOM_ALIAS_MAX_LENGTH = 32;
 
