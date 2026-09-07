@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { pingDatabase } from '../lib/prisma.js';
 import { pingRedis } from '../lib/redis.js';
 
 // Annotated explicitly: the inferred type is not nameable across pnpm's
@@ -18,8 +19,9 @@ healthRouter.get('/health', (_req, res) => {
  * load balancer can drain an instance that cannot serve requests properly.
  */
 healthRouter.get('/health/ready', async (_req, res) => {
-  const redisOk = await pingRedis();
-  const checks = { redis: redisOk };
+  // Checked concurrently so a slow dependency does not add to a fast one.
+  const [databaseOk, redisOk] = await Promise.all([pingDatabase(), pingRedis()]);
+  const checks = { database: databaseOk, redis: redisOk };
   const ready = Object.values(checks).every(Boolean);
 
   res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'degraded', checks });

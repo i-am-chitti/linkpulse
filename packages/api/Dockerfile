@@ -16,6 +16,9 @@ FROM deps AS build
 COPY tsconfig.base.json ./
 COPY packages/shared packages/shared
 COPY packages/api packages/api
+# `prisma generate` runs as part of the api build and never opens a connection,
+# but prisma.config.ts requires the variable to exist. A placeholder is enough.
+ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
 # shared must be built first: api imports its emitted .d.ts and .js.
 RUN pnpm --filter @linkpulse/shared build && pnpm --filter @linkpulse/api build
 

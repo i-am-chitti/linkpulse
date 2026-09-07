@@ -24,6 +24,8 @@ Full design in [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md).
 ```
 packages/shared   types, constants and Zod schemas used by both api and web
 packages/api      Express API: redirects, link CRUD, analytics, auth
+  prisma/         schema and migrations
+  src/generated/  Prisma client, generated - gitignored
 packages/web      Next.js dashboard                        (not yet scaffolded)
 benchmarks/k6     load tests                               (not yet scaffolded)
 ```
@@ -38,8 +40,16 @@ cp .env.example .env
 
 # Infra only; run the API on the host for a fast reload loop.
 docker compose up -d postgres redis
+
+pnpm --filter @linkpulse/api db:migrate      # apply migrations
+pnpm --filter @linkpulse/api test:db:setup   # create + migrate the test database
+
 pnpm dev
 ```
+
+Host ports default to 4001 (api), 5433 (postgres) and 6381 (redis) so the stack
+coexists with other local services; override `API_PORT`, `POSTGRES_PORT` and
+`REDIS_PORT` in `.env` if those collide too.
 
 Or bring up the whole stack, API included:
 
@@ -50,8 +60,11 @@ docker compose up -d
 ### Verify
 
 ```bash
-curl -s localhost:4000/health          # {"status":"ok","uptime":3}
-curl -s localhost:4000/health/ready    # {"status":"ready","checks":{"redis":true}}
+curl -s localhost:4001/health
+# {"status":"ok","uptime":3}
+
+curl -s localhost:4001/health/ready
+# {"status":"ready","checks":{"database":true,"redis":true}}
 ```
 
 `/health` is dependency-free (liveness) so an orchestrator will not restart a
@@ -72,7 +85,7 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 ## Status
 
 - [x] Monorepo scaffold, shared schemas, API skeleton, Docker Compose
-- [ ] Prisma schema and migrations
+- [x] Prisma schema and migrations
 - [ ] Shorten + redirect with Redis read-through cache
 - [ ] Auth (email/password JWT)
 - [ ] Async click tracking and analytics API

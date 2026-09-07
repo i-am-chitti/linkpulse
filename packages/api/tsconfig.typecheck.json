@@ -1,0 +1,13 @@
+{
+  // Type-checks tests and config files as well as src. The build config
+  // deliberately excludes them so they never reach dist, but untype-checked
+  // tests rot silently.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // Widened from src: nothing is emitted, so rootDir only needs to contain
+    // the files being checked.
+    "rootDir": "."
+  },
+  "include": ["src/**/*", "tests/**/*", "vitest.config.ts", "prisma.config.ts"]
+}

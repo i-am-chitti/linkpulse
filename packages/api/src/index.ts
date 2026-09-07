@@ -1,6 +1,7 @@
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
+import { closeDatabase } from './lib/prisma.js';
 import { closeRedis } from './lib/redis.js';
 
 const app = createApp();
@@ -11,7 +12,8 @@ const server = app.listen(env.PORT, () => {
 
 /**
  * Graceful shutdown: stop accepting connections, let in-flight requests finish,
- * then release Redis. Without this, a deploy would drop live redirects.
+ * then release Redis and the Postgres pool. Without this, a deploy would drop
+ * live redirects and leak backends.
  */
 let shuttingDown = false;
 
@@ -29,7 +31,7 @@ async function shutdown(signal: string): Promise<void> {
 
   server.close(async (err) => {
     if (err) logger.error({ err }, 'error while closing http server');
-    await closeRedis();
+    await Promise.allSettled([closeRedis(), closeDatabase()]);
     logger.info('shutdown complete');
     process.exit(err ? 1 : 0);
   });

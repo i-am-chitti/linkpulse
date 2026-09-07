@@ -7,6 +7,12 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  /**
+   * Postgres connections this instance may hold. Small on purpose: the
+   * redirect path hits Postgres only on a cache miss, and a large pool per
+   * instance multiplies into backend exhaustion once instances scale out.
+   */
+  DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
   REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
 
   /**

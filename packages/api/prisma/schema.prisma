@@ -1,0 +1,140 @@
+// LinkPulse data model. See docs/PROJECT_SPEC.md sections 4.1 and 4.2.
+//
+// Naming: models are camelCase in TypeScript and snake_case in Postgres via
+// @map, so SQL written by hand (migrations, analytics, k6 seeding) reads
+// idiomatically without fighting the ORM's conventions.
+//
+// Timestamps: every instant is @db.Timestamptz. Prisma defaults DateTime to
+// `timestamp without time zone`, which silently discards the offset - a bad
+// default for a service taking clicks from every time zone.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+// Prisma 7 takes the connection URL from prisma.config.ts (for the CLI) and
+// from a driver adapter (for the client), not from this block.
+datasource db {
+  provider = "postgresql"
+}
+
+enum AuthProvider {
+  LOCAL
+  GITHUB
+  GOOGLE
+
+  @@map("auth_provider")
+}
+
+enum DeviceType {
+  MOBILE
+  DESKTOP
+  TABLET
+  UNKNOWN
+
+  @@map("device_type")
+}
+
+model User {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  email String  @unique
+  name  String?
+
+  /// Null for OAuth users, who never set a password.
+  passwordHash String? @map("password_hash")
+
+  provider AuthProvider @default(LOCAL)
+  /// The provider's own user id. Null for local accounts.
+  providerId String? @map("provider_id")
+  avatarUrl  String? @map("avatar_url")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  links Link[]
+
+  /// Stops a second account being created for the same external identity.
+  /// Local accounts have a null providerId, and Postgres treats nulls as
+  /// distinct in a unique index, so they are unaffected.
+  @@unique([provider, providerId])
+  @@map("users")
+}
+
+model Link {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  /// The path segment that identifies this link, generated or user-chosen.
+  /// One column, not the spec's separate short_code + custom_alias: two
+  /// columns holding the same identity can drift out of sync.
+  shortCode   String  @unique @map("short_code")
+  originalUrl String  @map("original_url")
+  /// True when the user supplied shortCode themselves.
+  isCustom    Boolean @default(false) @map("is_custom")
+
+  /// Null for guest links, which nobody owns.
+  userId String? @map("user_id") @db.Uuid
+
+  isActive  Boolean   @default(true) @map("is_active")
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(3)
+
+  /// Denormalized so the dashboard never runs COUNT(*) over clicks.
+  /// Incremented in batches by the click worker.
+  clickCount Int @default(0) @map("click_count")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clicks Click[]
+
+  /// Serves the dashboard's "my links, newest first" query in one index scan.
+  @@index([userId, createdAt(sort: Desc)])
+  /// Lets the expiry sweeper find due links without a full scan.
+  @@index([expiresAt])
+  @@map("links")
+}
+
+model Click {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  linkId String @map("link_id") @db.Uuid
+
+  /// Nulled in place by the retention job after IP_RETENTION_DAYS, which is
+  /// why this is nullable despite the spec. Derived columns below survive, so
+  /// analytics stay intact once the address itself is gone.
+  ipAddress String? @map("ip_address") @db.Inet
+
+  country String?
+  city    String?
+
+  deviceType DeviceType @default(UNKNOWN) @map("device_type")
+  browser    String?
+  os         String?
+  referrer   String?
+
+  clickedAt DateTime @default(now()) @map("clicked_at") @db.Timestamptz(3)
+
+  /// The UTC calendar day of clickedAt, written by the worker.
+  ///
+  /// Stored rather than computed so the unique-visitor index below is a plain
+  /// B-tree the planner can use directly, instead of needing an expression
+  /// index on clicked_at::date.
+  clickDate DateTime @map("click_date") @db.Date
+
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  /// Analytics for one link over a time range.
+  @@index([linkId, clickedAt(sort: Desc)])
+  /// Cross-link time-range aggregation.
+  @@index([clickedAt])
+  /// Backs COUNT(DISTINCT ip_address) per link per day for unique visitors.
+  ///
+  /// Deliberately NOT unique: a unique constraint here would reject a real
+  /// visitor's second click on the same day, undercounting clickCount.
+  /// Uniqueness is an aggregation, not an invariant.
+  @@index([linkId, clickDate, ipAddress])
+  @@map("clicks")
+}

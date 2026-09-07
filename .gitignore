@@ -11,6 +11,9 @@ node_modules/
 dist/
 build/
 
+# Prisma client is generated from schema.prisma
+packages/api/src/generated/
+
 # IDE
 .vscode/
 .idea/

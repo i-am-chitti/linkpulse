@@ -1,7 +1,15 @@
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', '**/.next/**', 'benchmarks/**'] },
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/src/generated/**',
+      'benchmarks/**',
+    ],
+  },
   ...tseslint.configs.recommended,
   {
     rules: {
@@ -12,5 +20,10 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
       'no-console': 'error',
     },
+  },
+  {
+    // Standalone CLI scripts: stdout is their interface, not a stray debug log.
+    files: ['**/scripts/**'],
+    rules: { 'no-console': 'off' },
   },
 );

@@ -24,10 +24,11 @@ describe('GET /health/ready', () => {
   it('reports the state of each dependency it checks', async () => {
     const res = await request(app).get('/health/ready');
 
-    // 200 when Redis is up, 503 when it is not; both are correct answers, so
-    // assert the contract rather than the environment.
+    // 200 when the dependencies are up, 503 when they are not; both are
+    // correct answers, so assert the contract rather than the environment.
     expect([200, 503]).toContain(res.status);
     expect(res.body.checks).toHaveProperty('redis');
+    expect(res.body.checks).toHaveProperty('database');
     expect(res.body.status).toBe(res.status === 200 ? 'ready' : 'degraded');
   });
 });
