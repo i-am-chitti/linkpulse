@@ -1,0 +1,8 @@
+packages:
+  - 'packages/*'
+
+# vitest and tsx pull esbuild, whose install script fetches its native binary.
+# pnpm blocks install scripts by default and treats an ignored one as an error,
+# so it has to be allowed explicitly or the Docker build fails.
+allowBuilds:
+  esbuild: true
