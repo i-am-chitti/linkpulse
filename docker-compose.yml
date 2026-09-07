@@ -1,0 +1,87 @@
+# Local development stack.
+#
+#   docker compose up -d                  # everything, including the API image
+#   docker compose up -d postgres redis   # infra only, then `pnpm dev` on the host
+#
+# Host ports are configurable and default off the standard ports, so this stack
+# coexists with other local services. Override in .env if these collide too:
+#   API_PORT=4001  POSTGRES_PORT=5433  REDIS_PORT=6381
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: linkpulse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: linkpulse
+      POSTGRES_PASSWORD: linkpulse
+      POSTGRES_DB: linkpulse
+    ports:
+      - '${POSTGRES_PORT:-5433}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U linkpulse -d linkpulse']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: linkpulse-redis
+    restart: unless-stopped
+    # Cache-sized memory bound with LRU eviction: under pressure Redis drops
+    # cold keys instead of refusing writes, and reads fall through to Postgres.
+    command:
+      - redis-server
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - 'no'
+    ports:
+      - '${REDIS_PORT:-6381}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+      target: runtime
+    container_name: linkpulse-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      LOG_LEVEL: info
+      # Service names resolve on the compose network; internal ports, not the
+      # shifted host ports above.
+      DATABASE_URL: postgresql://linkpulse:linkpulse@postgres:5432/linkpulse
+      REDIS_URL: redis://redis:6379
+      APP_BASE_URL: http://localhost:${API_PORT:-4001}
+      CORS_ORIGINS: http://localhost:${WEB_PORT:-3000}
+    ports:
+      - '${API_PORT:-4001}:4000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres-data:
