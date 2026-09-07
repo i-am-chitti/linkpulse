@@ -8,6 +8,8 @@ import { env, isTest } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { healthRouter } from './routes/health.js';
+import { redirectRouter } from './routes/redirect.js';
+import { shortenRouter } from './routes/shorten.js';
 
 export function createApp(): Express {
   const app = express();
@@ -45,6 +47,11 @@ export function createApp(): Express {
   app.use(express.json({ limit: '16kb' }));
 
   app.use(healthRouter);
+  app.use(shortenRouter);
+
+  // Last: /:shortCode matches any single path segment, so anything mounted
+  // after it would be unreachable.
+  app.use(redirectRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

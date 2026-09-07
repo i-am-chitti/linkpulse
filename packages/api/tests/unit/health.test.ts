@@ -35,11 +35,13 @@ describe('GET /health/ready', () => {
 
 describe('unmatched routes', () => {
   it('returns the standard error envelope', async () => {
-    const res = await request(app).get('/definitely-not-a-route');
+    // Multi-segment on purpose: a single segment is a candidate short code and
+    // is claimed by the redirect route instead.
+    const res = await request(app).get('/definitely/not/a/route');
 
     expect(res.status).toBe(404);
     expect(res.body).toEqual({
-      error: { code: 'NOT_FOUND', message: 'Cannot GET /definitely-not-a-route' },
+      error: { code: 'NOT_FOUND', message: 'Cannot GET /definitely/not/a/route' },
     });
   });
 

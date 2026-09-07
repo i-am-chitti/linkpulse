@@ -65,6 +65,16 @@ curl -s localhost:4001/health
 
 curl -s localhost:4001/health/ready
 # {"status":"ready","checks":{"database":true,"redis":true}}
+
+# Shorten a URL, then follow it.
+CODE=$(curl -s -X POST localhost:4001/api/shorten \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://example.com/long/path"}' | jq -r .shortCode)
+
+curl -sI localhost:4001/$CODE | head -3
+# HTTP/1.1 302 Found
+# Cache-Control: no-store, no-cache, must-revalidate
+# Location: https://example.com/long/path
 ```
 
 `/health` is dependency-free (liveness) so an orchestrator will not restart a
@@ -86,7 +96,7 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 
 - [x] Monorepo scaffold, shared schemas, API skeleton, Docker Compose
 - [x] Prisma schema and migrations
-- [ ] Shorten + redirect with Redis read-through cache
+- [x] Shorten + redirect with Redis read-through cache
 - [ ] Auth (email/password JWT)
 - [ ] Async click tracking and analytics API
 - [ ] Sliding-window rate limiter
