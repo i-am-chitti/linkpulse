@@ -30,6 +30,11 @@ packages/web      Next.js dashboard                        (not yet scaffolded)
 benchmarks/k6     load tests                               (not yet scaffolded)
 ```
 
+Two processes run from the `api` package: `src/index.ts` serves HTTP, and
+`src/worker.ts` drains the click queue. They are separate because the worker
+loads a ~110 MB in-memory geo database that the redirect path never reads -
+measured live, the api container holds ~50 MB against the worker's ~170 MB.
+
 ## Getting started
 
 Requires Node >= 22, pnpm >= 10 and Docker.
@@ -75,6 +80,12 @@ curl -sI localhost:4001/$CODE | head -3
 # HTTP/1.1 302 Found
 # Cache-Control: no-store, no-cache, must-revalidate
 # Location: https://example.com/long/path
+
+# Clicks are queued off the hot path, then drained by the worker.
+docker compose exec redis redis-cli LLEN clicks:queue
+docker compose exec postgres psql -U linkpulse -d linkpulse \
+  -c 'SELECT device_type, browser, country, referrer, count(*)
+        FROM clicks GROUP BY 1,2,3,4 ORDER BY 5 DESC;'
 ```
 
 `/health` is dependency-free (liveness) so an orchestrator will not restart a
@@ -98,7 +109,8 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 - [x] Prisma schema and migrations
 - [x] Shorten + redirect with Redis read-through cache
 - [ ] Auth (email/password JWT)
-- [ ] Async click tracking and analytics API
+- [x] Async click tracking (queue + worker)
+- [ ] Analytics API and dashboard charts
 - [ ] Sliding-window rate limiter
 - [ ] Next.js dashboard
 - [ ] k6 benchmarks
