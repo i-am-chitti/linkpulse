@@ -83,5 +83,28 @@ services:
       retries: 5
       start_period: 10s
 
+  worker:
+    # Same image as the api, different entry point. It carries the ~110 MB geo
+    # database, which is exactly why it is not the api process.
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+      target: runtime
+    container_name: linkpulse-worker
+    restart: unless-stopped
+    command: ['node', 'packages/api/dist/worker.js']
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+      DATABASE_URL: postgresql://linkpulse:linkpulse@postgres:5432/linkpulse
+      REDIS_URL: redis://redis:6379
+      # Not used by the worker, but the shared config schema requires them.
+      APP_BASE_URL: http://localhost:${API_PORT:-4001}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres-data:

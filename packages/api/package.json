@@ -15,7 +15,9 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:reset": "prisma migrate reset",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "dev:worker": "tsx watch src/worker.ts",
+    "start:worker": "node dist/worker.js"
   },
   "dependencies": {
     "@linkpulse/shared": "workspace:*",
@@ -24,16 +26,19 @@
     "cors": "2.8.6",
     "dotenv": "17.4.2",
     "express": "5.2.1",
+    "geoip-lite": "2.0.3",
     "helmet": "8.3.0",
     "ioredis": "6.0.0",
     "pg": "8.23.0",
     "pino": "10.3.1",
     "pino-http": "11.0.0",
+    "ua-parser-js": "2.0.10",
     "zod": "4.5.4"
   },
   "devDependencies": {
     "@types/cors": "2.8.19",
     "@types/express": "5.0.6",
+    "@types/geoip-lite": "1.4.4",
     "@types/node": "22.20.1",
     "@types/pg": "8.23.1",
     "@types/supertest": "7.2.1",
