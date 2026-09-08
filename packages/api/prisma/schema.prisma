@@ -54,13 +54,51 @@ model User {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  links Link[]
+  links         Link[]
+  refreshTokens RefreshToken[]
 
   /// Stops a second account being created for the same external identity.
   /// Local accounts have a null providerId, and Postgres treats nulls as
   /// distinct in a unique index, so they are unaffected.
   @@unique([provider, providerId])
   @@map("users")
+}
+
+/// One issued refresh token.
+///
+/// Server-side state is what makes logout mean anything: a bare JWT refresh
+/// token stays valid until it expires, so "invalidate refresh token" (spec
+/// section 5.3) is impossible without a record to revoke.
+model RefreshToken {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  /// SHA-256 of the token, never the token itself. A leaked dump of this table
+  /// therefore hands over no usable sessions.
+  tokenHash String @unique @map("token_hash")
+
+  userId String @map("user_id") @db.Uuid
+
+  /// Shared by every token descended from one login.
+  ///
+  /// Tokens rotate on each refresh, so a stolen token is only useful until the
+  /// legitimate client refreshes. If an already-rotated token is presented
+  /// again, one of the two holders is an attacker and we cannot tell which, so
+  /// the entire family is revoked and both are forced to log in again.
+  familyId String @map("family_id") @db.Uuid
+
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Revoke every session for one user.
+  @@index([userId])
+  /// Revoke one login's chain on detected reuse.
+  @@index([familyId])
+  /// Lets the cleanup job find expired rows without a full scan.
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 model Link {
