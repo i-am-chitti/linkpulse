@@ -16,6 +16,23 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
 
   /**
+   * Clicks the worker writes per transaction. Larger batches amortise the
+   * round trip but hold the transaction open longer.
+   */
+  CLICK_BATCH_SIZE: z.coerce.number().int().min(1).max(1000).default(100),
+  /**
+   * Longest the worker blocks on an empty queue before looping. Bounds how
+   * long a shutdown signal waits to be noticed.
+   */
+  CLICK_BLOCK_SECONDS: z.coerce.number().int().min(1).max(60).default(5),
+  /**
+   * Hard cap on queued clicks. Without it a stopped worker would grow the list
+   * until Redis hit maxmemory and began evicting the URL cache and rate-limit
+   * counters, turning a stalled worker into a site-wide outage.
+   */
+  CLICK_QUEUE_MAX_LENGTH: z.coerce.number().int().min(100).max(10_000_000).default(100_000),
+
+  /**
    * Origin the short links are served from, used to build shortUrl in responses.
    *
    * Named APP_BASE_URL, not BASE_URL: Vite reserves BASE_URL for its public
