@@ -55,3 +55,18 @@ export const MAX_PAGE_SIZE = 100;
 
 /** Days a raw click IP is retained before the retention job nulls it out. */
 export const IP_RETENTION_DAYS = 30;
+
+/** Default analytics window when the caller gives no range, in days. */
+export const DEFAULT_ANALYTICS_RANGE_DAYS = 30;
+
+/**
+ * Longest analytics window a caller may request.
+ *
+ * Bounds the work a single request can ask of Postgres: the day series is
+ * generated per day in the range, so an unbounded window would let one request
+ * scan and group years of clicks.
+ */
+export const MAX_ANALYTICS_RANGE_DAYS = 366;
+
+/** Rows returned for "top" breakdowns before the rest is bucketed. */
+export const TOP_BREAKDOWN_LIMIT = 10;

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import {
   CUSTOM_ALIAS_MAX_LENGTH,
+  DEFAULT_ANALYTICS_RANGE_DAYS,
+  MAX_ANALYTICS_RANGE_DAYS,
   CUSTOM_ALIAS_MIN_LENGTH,
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
@@ -95,3 +97,46 @@ export type UpdateLinkInput = z.infer<typeof updateLinkSchema>;
 export type ListLinksQuery = z.infer<typeof listLinksQuerySchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+
+/** Days between two YYYY-MM-DD dates, inclusive of both ends. */
+function inclusiveDaySpan(from: string, to: string): number {
+  const ms = Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`);
+  return Math.floor(ms / 86_400_000) + 1;
+}
+
+function shiftUtcDays(isoDate: string, days: number): string {
+  const shifted = new Date(Date.parse(`${isoDate}T00:00:00Z`) + days * 86_400_000);
+  return shifted.toISOString().slice(0, 10);
+}
+
+/**
+ * Analytics date range.
+ *
+ * Dates are plain calendar days in UTC, matching the clicks.click_date column,
+ * so a range means the same thing to the caller and to the query regardless of
+ * where either is running.
+ *
+ * Both ends are optional and resolved here rather than in the route, so the
+ * defaulting is covered by these schemas' own tests.
+ */
+export const analyticsQuerySchema = z
+  .object({
+    from: z.iso.date().optional(),
+    to: z.iso.date().optional(),
+  })
+  .transform(({ from, to }) => {
+    const resolvedTo = to ?? new Date().toISOString().slice(0, 10);
+    const resolvedFrom = from ?? shiftUtcDays(resolvedTo, -(DEFAULT_ANALYTICS_RANGE_DAYS - 1));
+    return { from: resolvedFrom, to: resolvedTo };
+  })
+  // String comparison is correct ordering for zero-padded ISO dates.
+  .refine(({ from, to }) => from <= to, {
+    error: '"from" must not be after "to"',
+    path: ['from'],
+  })
+  .refine(({ from, to }) => inclusiveDaySpan(from, to) <= MAX_ANALYTICS_RANGE_DAYS, {
+    error: `Range must not exceed ${MAX_ANALYTICS_RANGE_DAYS} days`,
+    path: ['from'],
+  });
+
+export type AnalyticsQuery = z.infer<typeof analyticsQuerySchema>;

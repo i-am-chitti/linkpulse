@@ -59,6 +59,26 @@ export interface LinkAnalytics {
   topReferrers: ReferrerClicks[];
 }
 
+/** The at-a-glance numbers for one link, over all time. */
+export interface LinkAnalyticsSummary {
+  linkId: string;
+  totalClicks: number;
+  /**
+   * Distinct IPs that clicked.
+   *
+   * Undercounts historical periods by design: the retention job nulls IPs
+   * after 30 days, and a null cannot be counted as distinct. Derived
+   * breakdowns (country, device, browser) are unaffected.
+   */
+  uniqueVisitors: number;
+  clicksLast7Days: number;
+  clicksLast30Days: number;
+  topCountry: string | null;
+  topReferrer: string | null;
+  topDevice: DeviceType | null;
+  lastClickedAt: string | null;
+}
+
 /** Every non-2xx response from the API uses this envelope. */
 export interface ApiErrorBody {
   error: {

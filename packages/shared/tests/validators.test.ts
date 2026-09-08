@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  analyticsQuerySchema,
   createLinkSchema,
   shortenGuestSchema,
   customAliasSchema,
@@ -144,5 +145,53 @@ describe('shortenGuestSchema', () => {
 
   it('rejects a non-http scheme just like the authenticated schema', () => {
     expect(shortenGuestSchema.safeParse({ url: 'javascript:alert(1)' }).success).toBe(false);
+  });
+});
+
+describe('analyticsQuerySchema', () => {
+  it('defaults to the trailing 30 days, inclusive', () => {
+    const { from, to } = analyticsQuerySchema.parse({});
+
+    const span = (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000;
+    expect(span).toBe(29);
+    expect(to).toBe(new Date().toISOString().slice(0, 10));
+  });
+
+  it('accepts an explicit range', () => {
+    expect(analyticsQuerySchema.parse({ from: '2026-09-01', to: '2026-09-07' })).toEqual({
+      from: '2026-09-01',
+      to: '2026-09-07',
+    });
+  });
+
+  it('back-fills "from" when only "to" is given', () => {
+    const { from } = analyticsQuerySchema.parse({ to: '2026-09-30' });
+    expect(from).toBe('2026-09-01');
+  });
+
+  it('accepts a single-day range', () => {
+    expect(analyticsQuerySchema.safeParse({ from: '2026-09-01', to: '2026-09-01' }).success).toBe(
+      true,
+    );
+  });
+
+  it('rejects an inverted range', () => {
+    const result = analyticsQuerySchema.safeParse({ from: '2026-09-07', to: '2026-09-01' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a range longer than the cap', () => {
+    // Unbounded ranges would let one request group years of clicks.
+    const result = analyticsQuerySchema.safeParse({ from: '2024-01-01', to: '2026-09-01' });
+    expect(result.success).toBe(false);
+  });
+
+  it.each([
+    ['a non-padded date', '2026-9-1'],
+    ['a day that does not exist', '2026-02-30'],
+    ['a timestamp', '2026-09-01T00:00:00Z'],
+    ['nonsense', 'yesterday'],
+  ])('rejects %s', (_label, from) => {
+    expect(analyticsQuerySchema.safeParse({ from }).success).toBe(false);
   });
 });
