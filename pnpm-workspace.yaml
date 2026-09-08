@@ -6,6 +6,8 @@ packages:
 allowBuilds:
   # vitest and tsx pull esbuild, whose script fetches its native binary.
   esbuild: true
+  # bcrypt's script fetches its prebuilt native binary (no compiler needed).
+  bcrypt: true
   # Prisma's scripts download the query engine for the host platform.
   prisma: true
   '@prisma/engines': true

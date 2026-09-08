@@ -63,6 +63,7 @@ services:
       # shifted host ports above.
       DATABASE_URL: postgresql://linkpulse:linkpulse@postgres:5432/linkpulse
       REDIS_URL: redis://redis:6379
+      JWT_SECRET: '${JWT_SECRET:?set JWT_SECRET in .env, generate one with openssl rand -hex 32}'
       APP_BASE_URL: http://localhost:${API_PORT:-4001}
       CORS_ORIGINS: http://localhost:${WEB_PORT:-3000}
     ports:
@@ -100,6 +101,7 @@ services:
       REDIS_URL: redis://redis:6379
       # Not used by the worker, but the shared config schema requires them.
       APP_BASE_URL: http://localhost:${API_PORT:-4001}
+      JWT_SECRET: '${JWT_SECRET:?set JWT_SECRET in .env, generate one with openssl rand -hex 32}'
     depends_on:
       postgres:
         condition: service_healthy

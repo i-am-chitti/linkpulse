@@ -16,6 +16,26 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
 
   /**
+   * Signing key for access tokens.
+   *
+   * The 32-character floor is deliberate: HS256 with a short secret is
+   * brute-forceable offline, and a weak secret here forges any session.
+   */
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  /**
+   * Access token lifetime. Short, because nothing can revoke one before it
+   * expires - revocation lives on the refresh token, which is stored.
+   */
+  ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(60).max(86_400).default(900),
+  /** Refresh token lifetime, and so the longest a session can idle. */
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+  /**
+   * bcrypt cost factor. 12 is ~250ms per hash on current hardware: slow enough
+   * to make offline cracking expensive, fast enough for a login request.
+   */
+  BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12),
+
+  /**
    * Clicks the worker writes per transaction. Larger batches amortise the
    * round trip but hold the transaction open longer.
    */
