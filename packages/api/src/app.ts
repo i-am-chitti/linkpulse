@@ -8,6 +8,7 @@ import { pinoHttp } from 'pino-http';
 import { env, isTest } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { analyticsRouter } from './routes/analytics.js';
 import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 import { linksRouter } from './routes/links.js';
@@ -54,6 +55,7 @@ export function createApp(): Express {
   app.use(healthRouter);
   app.use(authRouter);
   app.use(linksRouter);
+  app.use(analyticsRouter);
   app.use(shortenRouter);
 
   // Last: /:shortCode matches any single path segment, so anything mounted

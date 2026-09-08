@@ -119,7 +119,8 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 - [x] Link CRUD scoped to the owner, with cache invalidation
 - [ ] OAuth (GitHub, Google)
 - [x] Async click tracking (queue + worker)
-- [ ] Analytics API and dashboard charts
+- [x] Analytics API (time series and breakdowns)
+- [ ] Dashboard charts
 - [ ] Sliding-window rate limiter
 - [ ] Next.js dashboard
 - [ ] k6 benchmarks
