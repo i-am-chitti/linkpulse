@@ -10,6 +10,7 @@ import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
+import { linksRouter } from './routes/links.js';
 import { redirectRouter } from './routes/redirect.js';
 import { shortenRouter } from './routes/shorten.js';
 
@@ -52,6 +53,7 @@ export function createApp(): Express {
 
   app.use(healthRouter);
   app.use(authRouter);
+  app.use(linksRouter);
   app.use(shortenRouter);
 
   // Last: /:shortCode matches any single path segment, so anything mounted

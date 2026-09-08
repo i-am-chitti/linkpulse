@@ -116,7 +116,7 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 - [x] Prisma schema and migrations
 - [x] Shorten + redirect with Redis read-through cache
 - [x] Auth: email/password, JWT access tokens, rotating refresh tokens
-- [ ] Link CRUD scoped to the owner
+- [x] Link CRUD scoped to the owner, with cache invalidation
 - [ ] OAuth (GitHub, Google)
 - [x] Async click tracking (queue + worker)
 - [ ] Analytics API and dashboard charts
