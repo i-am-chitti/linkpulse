@@ -56,6 +56,13 @@ Host ports default to 4001 (api), 5433 (postgres) and 6381 (redis) so the stack
 coexists with other local services; override `API_PORT`, `POSTGRES_PORT` and
 `REDIS_PORT` in `.env` if those collide too.
 
+`JWT_SECRET` has no default and compose refuses to start without it. Generate
+one with `openssl rand -hex 32`.
+
+Tests use Postgres database `linkpulse_test` and **Redis logical database 1**,
+so `pnpm test` is safe to run while the dev stack is up - otherwise the running
+worker would drain `clicks:queue` out from under the click tests.
+
 Or bring up the whole stack, API included:
 
 ```bash
@@ -108,7 +115,9 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 - [x] Monorepo scaffold, shared schemas, API skeleton, Docker Compose
 - [x] Prisma schema and migrations
 - [x] Shorten + redirect with Redis read-through cache
-- [ ] Auth (email/password JWT)
+- [x] Auth: email/password, JWT access tokens, rotating refresh tokens
+- [ ] Link CRUD scoped to the owner
+- [ ] OAuth (GitHub, Google)
 - [x] Async click tracking (queue + worker)
 - [ ] Analytics API and dashboard charts
 - [ ] Sliding-window rate limiter

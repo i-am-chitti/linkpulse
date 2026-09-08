@@ -1,12 +1,14 @@
 import type { IncomingMessage } from 'node:http';
 import express from 'express';
 import type { Express } from 'express';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import { env, isTest } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 import { redirectRouter } from './routes/redirect.js';
 import { shortenRouter } from './routes/shorten.js';
@@ -45,8 +47,11 @@ export function createApp(): Express {
 
   // Payloads are small JSON objects; a tight limit is free DoS protection.
   app.use(express.json({ limit: '16kb' }));
+  // The refresh token travels as an httpOnly cookie.
+  app.use(cookieParser());
 
   app.use(healthRouter);
+  app.use(authRouter);
   app.use(shortenRouter);
 
   // Last: /:shortCode matches any single path segment, so anything mounted
