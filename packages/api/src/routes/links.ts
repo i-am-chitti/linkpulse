@@ -2,17 +2,24 @@ import { Router } from 'express';
 import { createLinkSchema, listLinksQuerySchema, updateLinkSchema } from '@linkpulse/shared';
 import { notFound } from '../lib/errors.js';
 import { toLinkDto } from '../lib/serialize.js';
-import { actorOf, requireAuth } from '../middleware/auth.js';
+import { actorOf } from '../middleware/auth.js';
 import { deleteLink, getLink, listLinks, updateLink } from '../services/linkService.js';
 import { createLink } from '../services/urlService.js';
 
 export const linksRouter: Router = Router();
 
 /**
- * Every route here is owner-scoped, so authentication is applied once to the
- * whole router rather than per handler - a route added later cannot forget it.
+ * Every route here is owner-scoped. Authentication and rate limiting are
+ * applied once, in app.ts, before either this router or analyticsRouter -
+ * not here per router.
+ *
+ * That is not just tidiness: a router-level `.use(path, ...)` matches any
+ * request whose path starts with that prefix, even one this router has no
+ * terminal route for. Guarding '/api/links' identically in both linksRouter
+ * and analyticsRouter meant a request to an analytics-only path (which falls
+ * through linksRouter's unmatched routes before reaching analyticsRouter)
+ * paid the rate limit twice - silently halving the real per-user quota.
  */
-linksRouter.use('/api/links', requireAuth);
 
 /**
  * Ids are UUIDs. Postgres raises a type error on a malformed one, which would

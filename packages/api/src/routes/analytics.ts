@@ -1,17 +1,18 @@
 import { Router } from 'express';
 import { analyticsQuerySchema } from '@linkpulse/shared';
 import { notFound } from '../lib/errors.js';
-import { actorOf, requireAuth } from '../middleware/auth.js';
+import { actorOf } from '../middleware/auth.js';
 import { getLinkAnalytics, getLinkAnalyticsSummary } from '../services/analyticsService.js';
 import { getLink } from '../services/linkService.js';
 
 export const analyticsRouter: Router = Router();
 
 /**
- * Applied here rather than inherited: router.use in linksRouter only guards
- * routes declared in that router, so this one must protect itself.
+ * Authentication and rate limiting are applied once for the whole '/api/links'
+ * prefix in app.ts, ahead of this router and linksRouter - see the comment in
+ * links.ts for why duplicating that guard in both routers double-charged the
+ * rate limit on every analytics request.
  */
-analyticsRouter.use('/api/links', requireAuth);
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

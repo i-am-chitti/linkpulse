@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { loginSchema, registerSchema } from '@linkpulse/shared';
-import { isProduction } from '../config/env.js';
+import { env, isProduction } from '../config/env.js';
 import { requireAuth, actorOf } from '../middleware/auth.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 import { prisma } from '../lib/prisma.js';
 import { notFound } from '../lib/errors.js';
 import { login, logout, refresh, register, toPublicUser } from '../services/authService.js';
@@ -9,6 +10,14 @@ import type { IssuedSession } from '../services/authService.js';
 import type { Response } from 'express';
 
 export const authRouter: Router = Router();
+
+/**
+ * Not in spec section 5.3, which lists no rate limit for these routes: added
+ * as a floor against credential stuffing and account-creation spam. One
+ * shared per-IP budget across register/login/refresh, tighter than plain
+ * link creation, since these are the routes an attacker automates first.
+ */
+const authRateLimit = rateLimit({ bucket: 'auth', anonLimit: env.RATE_LIMIT_AUTH_PER_MINUTE });
 
 /**
  * Path-scoped on purpose.
@@ -41,17 +50,17 @@ function sendSession(res: Response, status: number, session: IssuedSession): voi
   });
 }
 
-authRouter.post('/api/auth/register', async (req, res) => {
+authRouter.post('/api/auth/register', authRateLimit, async (req, res) => {
   const input = registerSchema.parse(req.body);
   sendSession(res, 201, await register(input));
 });
 
-authRouter.post('/api/auth/login', async (req, res) => {
+authRouter.post('/api/auth/login', authRateLimit, async (req, res) => {
   const input = loginSchema.parse(req.body);
   sendSession(res, 200, await login(input));
 });
 
-authRouter.post('/api/auth/refresh', async (req, res) => {
+authRouter.post('/api/auth/refresh', authRateLimit, async (req, res) => {
   // Cookie first; the body is accepted so non-browser clients can refresh too.
   const token = (req.cookies?.[REFRESH_COOKIE] as string | undefined) ?? req.body?.refreshToken;
   sendSession(res, 200, await refresh(String(token ?? '')));

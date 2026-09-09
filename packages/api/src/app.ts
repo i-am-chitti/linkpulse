@@ -8,6 +8,8 @@ import { pinoHttp } from 'pino-http';
 import { env, isTest } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { requireAuth } from './middleware/auth.js';
+import { rateLimit } from './middleware/rateLimit.js';
 import { analyticsRouter } from './routes/analytics.js';
 import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
@@ -54,8 +56,27 @@ export function createApp(): Express {
 
   app.use(healthRouter);
   app.use(authRouter);
+
+  /**
+   * Auth and the shared per-user rate limit for every /api/links* route,
+   * applied once here rather than inside linksRouter and analyticsRouter.
+   *
+   * Both routers own paths under this prefix, and Express matches a
+   * router-level `.use('/api/links', ...)` against any request whose path
+   * starts with it - including one only the *other* router has a terminal
+   * route for. Guarding the prefix in both places meant an analytics request
+   * paid the rate limit twice on its way through. One mount here, ahead of
+   * both routers, means it is paid exactly once no matter which router ends
+   * up serving the request.
+   */
+  app.use(
+    '/api/links',
+    requireAuth,
+    rateLimit({ bucket: 'api', userLimit: env.RATE_LIMIT_USER_API_PER_MINUTE }),
+  );
   app.use(linksRouter);
   app.use(analyticsRouter);
+
   app.use(shortenRouter);
 
   // Last: /:shortCode matches any single path segment, so anything mounted
