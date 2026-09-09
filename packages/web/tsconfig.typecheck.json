@@ -1,0 +1,8 @@
+{
+  // Type-checks tests as well as the app. next build deliberately excludes
+  // them (see tsconfig.json) so a broken test never blocks a production
+  // build; this is what `pnpm typecheck` and `pnpm --filter @linkpulse/web
+  // typecheck` run instead.
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules"]
+}

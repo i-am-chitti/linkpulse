@@ -11,3 +11,13 @@ allowBuilds:
   # Prisma's scripts download the query engine for the host platform.
   prisma: true
   '@prisma/engines': true
+
+# pnpm's supply-chain policy holds back packages published very recently
+# (a window during which a compromised release is most likely to be caught
+# and pulled). Added automatically on install because these three - all
+# official React 19.3.0 packages - were freshly published; excluded because
+# the project intentionally tracks current stable.
+minimumReleaseAgeExclude:
+  - react-dom@19.3.0
+  - react@19.3.0
+  - scheduler@0.28.0

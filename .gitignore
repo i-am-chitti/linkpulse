@@ -14,6 +14,12 @@ build/
 # Prisma client is generated from schema.prisma
 packages/api/src/generated/
 
+# Next.js regenerates this on every build/dev run; its own header says not to edit it
+packages/web/next-env.d.ts
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # IDE
 .vscode/
 .idea/
