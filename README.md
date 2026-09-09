@@ -26,7 +26,7 @@ packages/shared   types, constants and Zod schemas used by both api and web
 packages/api      Express API: redirects, link CRUD, analytics, auth
   prisma/         schema and migrations
   src/generated/  Prisma client, generated - gitignored
-packages/web      Next.js dashboard                        (not yet scaffolded)
+packages/web      Next.js dashboard: auth pages, protected layout
 benchmarks/k6     load tests                               (not yet scaffolded)
 ```
 
@@ -49,6 +49,7 @@ docker compose up -d postgres redis
 pnpm --filter @linkpulse/api db:migrate      # apply migrations
 pnpm --filter @linkpulse/api test:db:setup   # create + migrate the test database
 
+cp packages/web/.env.example packages/web/.env.local   # once
 pnpm dev
 ```
 
@@ -100,6 +101,9 @@ for i in $(seq 1 11); do
     -H 'content-type: application/json' -d '{"url":"https://example.com"}'
 done
 # 201 x10, then 429 with X-RateLimit-Remaining: 0 and Retry-After: <seconds>
+
+# Dashboard, at http://localhost:3000: register, land on /dashboard, reload
+# (session survives via the httpOnly refresh cookie), sign out.
 ```
 
 `/health` is dependency-free (liveness) so an orchestrator will not restart a
@@ -129,6 +133,7 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 - [x] Analytics API (time series and breakdowns)
 - [ ] Dashboard charts
 - [x] Sliding-window rate limiter (Redis Lua, per-IP and per-user tiers)
-- [ ] Next.js dashboard
+- [x] Next.js dashboard shell: auth pages, protected layout, session restore
+- [ ] Link list, create form, and per-link analytics charts
 - [ ] k6 benchmarks
 - [ ] CI/CD and deployment
