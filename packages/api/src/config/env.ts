@@ -36,6 +36,29 @@ const envSchema = z.object({
   BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12),
 
   /**
+   * Sliding-window duration. Every per-minute limit below is "per this many
+   * seconds", so changing it rescales every limit rather than just one.
+   */
+  RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).max(3600).default(60),
+  /** Unauthenticated POST /api/shorten. Spec section 2.3. */
+  RATE_LIMIT_ANON_CREATE_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).default(10),
+  /** Unauthenticated GET /:shortCode. Spec section 2.3. */
+  RATE_LIMIT_ANON_REDIRECT_PER_MINUTE: z.coerce.number().int().min(1).max(1_000_000).default(100),
+  /**
+   * Authenticated API traffic. One shared bucket per user rather than one per
+   * endpoint: spec section 5.2 lists the same 50/min for every /api/links*
+   * route, which is one limit wearing several names, not several limits.
+   */
+  RATE_LIMIT_USER_API_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).default(50),
+  /** Redirects made with a bearer token attached. Spec section 2.3. */
+  RATE_LIMIT_USER_REDIRECT_PER_MINUTE: z.coerce.number().int().min(1).max(1_000_000).default(500),
+  /**
+   * Not in the spec: register/login/refresh share this per-IP budget, tighter
+   * than plain link creation, as a floor against credential stuffing.
+   */
+  RATE_LIMIT_AUTH_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).default(20),
+
+  /**
    * Clicks the worker writes per transaction. Larger batches amortise the
    * round trip but hold the transaction open longer.
    */
