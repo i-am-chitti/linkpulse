@@ -93,6 +93,13 @@ docker compose exec redis redis-cli LLEN clicks:queue
 docker compose exec postgres psql -U linkpulse -d linkpulse \
   -c 'SELECT device_type, browser, country, referrer, count(*)
         FROM clicks GROUP BY 1,2,3,4 ORDER BY 5 DESC;'
+
+# 11 guest-shorten requests from one IP trips the 10/min anonymous limit.
+for i in $(seq 1 11); do
+  curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:4001/api/shorten \
+    -H 'content-type: application/json' -d '{"url":"https://example.com"}'
+done
+# 201 x10, then 429 with X-RateLimit-Remaining: 0 and Retry-After: <seconds>
 ```
 
 `/health` is dependency-free (liveness) so an orchestrator will not restart a
@@ -121,7 +128,7 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 - [x] Async click tracking (queue + worker)
 - [x] Analytics API (time series and breakdowns)
 - [ ] Dashboard charts
-- [ ] Sliding-window rate limiter
+- [x] Sliding-window rate limiter (Redis Lua, per-IP and per-user tiers)
 - [ ] Next.js dashboard
 - [ ] k6 benchmarks
 - [ ] CI/CD and deployment
