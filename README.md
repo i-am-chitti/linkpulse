@@ -104,6 +104,10 @@ done
 
 # Dashboard, at http://localhost:3000: register, land on /dashboard, reload
 # (session survives via the httpOnly refresh cookie), sign out.
+
+# On /dashboard: shorten a URL (optionally with a custom alias or expiry),
+# search and filter the list, toggle a link active/inactive, copy its short
+# URL, delete it (requires a second confirming click).
 ```
 
 `/health` is dependency-free (liveness) so an orchestrator will not restart a
@@ -134,6 +138,7 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 - [ ] Dashboard charts
 - [x] Sliding-window rate limiter (Redis Lua, per-IP and per-user tiers)
 - [x] Next.js dashboard shell: auth pages, protected layout, session restore
-- [ ] Link list, create form, and per-link analytics charts
+- [x] Link list, search/filter/pagination, create form, per-row actions
+- [ ] Per-link analytics charts
 - [ ] k6 benchmarks
 - [ ] CI/CD and deployment

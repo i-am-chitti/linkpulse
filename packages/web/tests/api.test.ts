@@ -2,7 +2,7 @@
 // and error-mapping behaviour is worth testing directly rather than trusting
 // it by way of whatever component happens to call it.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiFetch, ApiError, getAccessToken, setAccessToken } from '../lib/api.js';
+import { apiFetch, ApiError, getAccessToken, setAccessToken } from '../lib/api';
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {

@@ -45,8 +45,15 @@ export const customAliasSchema = z
     'That alias is reserved by the application',
   );
 
-/** Expiry must be in the future; a past date would create a dead link. */
-const futureDateSchema = z.coerce
+/**
+ * Expiry must be in the future; a past date would create a dead link.
+ *
+ * Exported (not just used by createLinkSchema) so the web package's create-
+ * link form can compose the exact same rule for its client-side validation,
+ * rather than re-deriving "must be a future date" and risking it drifting
+ * from what the API actually enforces.
+ */
+export const futureDateSchema = z.coerce
   .date()
   .refine((date) => date.getTime() > Date.now(), 'Expiry must be in the future');
 
