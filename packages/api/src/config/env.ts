@@ -93,6 +93,13 @@ const envSchema = z.object({
    * counters, turning a stalled worker into a site-wide outage.
    */
   CLICK_QUEUE_MAX_LENGTH: z.coerce.number().int().min(100).max(10_000_000).default(100_000),
+  /**
+   * How often the worker sweeps expired guest links and stale refresh
+   * tokens. Runs on the same process as click draining rather than its own
+   * container - this is lightweight, off-hot-path maintenance work, not
+   * something that needs its own schedule.
+   */
+  CLEANUP_INTERVAL_MINUTES: z.coerce.number().int().min(1).max(1440).default(60),
 
   /**
    * Origin the short links are served from, used to build shortUrl in responses.
