@@ -1,0 +1,21 @@
+# Benchmarking overlay - layer this on top of docker-compose.yml so a plain
+# `docker compose up` still shows the real production-shaped rate limits.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.loadtest.yml up -d --build api
+#
+# k6 traffic all comes from one machine: every anonymous request shares one
+# IP, and every authenticated request in a given script shares one benchmark
+# user. Under the real defaults (100/min anonymous redirects, 500/min per
+# user) the rate limiter would throttle the load generator itself long before
+# the redirect hot path was ever actually under load - which would only prove
+# the limiter works, something benchmarks/../packages/api/tests already cover.
+# These values are the schema's ceiling (packages/api/src/config/env.ts), not
+# a recommendation for any real deployment.
+services:
+  api:
+    environment:
+      RATE_LIMIT_ANON_CREATE_PER_MINUTE: '100000'
+      RATE_LIMIT_ANON_REDIRECT_PER_MINUTE: '1000000'
+      RATE_LIMIT_USER_API_PER_MINUTE: '100000'
+      RATE_LIMIT_USER_REDIRECT_PER_MINUTE: '1000000'
+      RATE_LIMIT_AUTH_PER_MINUTE: '100000'
