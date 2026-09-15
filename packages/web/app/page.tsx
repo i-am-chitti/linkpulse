@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { Link2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth';
 import { GuestShortenForm } from '../components/GuestShortenForm';
@@ -25,7 +26,10 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gray-50 px-4">
       <div className="w-full max-w-md text-center">
-        <h1 className="text-2xl font-semibold text-gray-900">LinkPulse</h1>
+        <h1 className="flex items-center justify-center gap-2 text-2xl font-semibold text-gray-900">
+          <Link2 className="h-6 w-6 text-brand" />
+          LinkPulse
+        </h1>
         <p className="mt-1 text-gray-600">Shorten a link in seconds. No account required.</p>
       </div>
       <Card className="w-full max-w-md">
