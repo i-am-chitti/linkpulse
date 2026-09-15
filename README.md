@@ -1,5 +1,7 @@
 # LinkPulse
 
+[![CI](https://github.com/i-am-chitti/linkpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/i-am-chitti/linkpulse/actions/workflows/ci.yml)
+
 A high-performance URL shortener with real-time click analytics. Redirects are
 served from a Redis read-through cache, click events are processed off the hot
 path by a background worker, and abuse is bounded by a sliding-window rate
@@ -138,10 +140,10 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 - [ ] OAuth (GitHub, Google)
 - [x] Async click tracking (queue + worker)
 - [x] Analytics API (time series and breakdowns)
-- [ ] Dashboard charts
+- [x] Dashboard charts
 - [x] Sliding-window rate limiter (Redis Lua, per-IP and per-user tiers)
 - [x] Next.js dashboard shell: auth pages, protected layout, session restore
 - [x] Link list, search/filter/pagination, create form, per-row actions
 - [x] Per-link analytics: clicks over time, top countries, devices, browsers, referrers
+- [x] CI/CD: lint, typecheck, build and test on every push/PR; Docker images published to GHCR on merge to main
 - [ ] k6 benchmarks
-- [ ] CI/CD and deployment
