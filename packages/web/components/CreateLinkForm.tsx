@@ -8,20 +8,18 @@ import { customAliasSchema, destinationUrlSchema, futureDateSchema } from '@link
 import type { CreateLinkInput } from '@linkpulse/shared';
 import { ApiError } from '../lib/api';
 import { useCreateLink } from '../lib/links';
+import { emptyToUndefined } from '../lib/zodHelpers';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 
 /**
- * The form's own schema, not createLinkSchema directly.
- *
- * An untouched optional HTML input yields "", not undefined, and
- * customAliasSchema's min-length check would fail on "" the same way it
- * fails on "ab" - both are strings under 3 characters. z.preprocess converts
- * "" to undefined before the shared rule ever sees it, so a blank optional
- * field reads as "not provided" rather than "provided and invalid". (.pipe()
- * looks like the more obvious tool here, but its generic input-type check
- * does not line up with z.coerce.date()'s permissive `unknown` input in this
- * Zod version; preprocess's untyped callback sidesteps that.)
+ * The form's own schema, not createLinkSchema directly: emptyToUndefined
+ * normalizes each optional field's blank "" before @linkpulse/shared's own
+ * rules run, so a blank field reads as "not provided" rather than "provided
+ * and invalid". (.pipe() looks like the more obvious tool here, but its
+ * generic input-type check does not line up with z.coerce.date()'s
+ * permissive `unknown` input in this Zod version; preprocess's untyped
+ * callback sidesteps that.)
  *
  * The rules themselves - what makes a URL, an alias, or an expiry valid -
  * are still the exact ones the API enforces, imported from @linkpulse/shared.
@@ -31,10 +29,6 @@ import { Input } from './ui/Input';
  * it is serialized - parsing it again on the server would use the server's
  * time zone instead and silently shift the expiry.
  */
-function emptyToUndefined(value: unknown) {
-  return value === '' ? undefined : value;
-}
-
 const formSchema = z.object({
   url: destinationUrlSchema,
   customAlias: z.preprocess(emptyToUndefined, customAliasSchema.optional()),
