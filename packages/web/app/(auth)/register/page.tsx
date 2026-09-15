@@ -9,6 +9,7 @@ import { registerSchema } from '@linkpulse/shared';
 import type { RegisterInput } from '@linkpulse/shared';
 import { ApiError } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
+import { OAuthButtons } from '../../../components/OAuthButtons';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
@@ -63,6 +64,9 @@ export default function RegisterPage() {
           Create account
         </Button>
       </form>
+      <div className="mt-4">
+        <OAuthButtons />
+      </div>
       <p className="mt-4 text-sm text-gray-600">
         Already have an account?{' '}
         <Link href="/login" className="text-brand hover:underline">

@@ -9,6 +9,7 @@ import { loginSchema } from '@linkpulse/shared';
 import type { LoginInput } from '@linkpulse/shared';
 import { ApiError } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
+import { OAuthButtons } from '../../../components/OAuthButtons';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
@@ -61,6 +62,9 @@ export default function LoginPage() {
           Sign in
         </Button>
       </form>
+      <div className="mt-4">
+        <OAuthButtons />
+      </div>
       <p className="mt-4 text-sm text-gray-600">
         No account?{' '}
         <Link href="/register" className="text-brand hover:underline">
