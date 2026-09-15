@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, ExternalLink, Trash2 } from 'lucide-react';
+import { Check, Copy, ExternalLink, Pencil, Trash2, X } from 'lucide-react';
+import { destinationUrlSchema } from '@linkpulse/shared';
 import type { LinkDto } from '@linkpulse/shared';
+import { ApiError } from '../lib/api';
 import { copyToClipboard } from '../lib/clipboard';
 import { useDeleteLink, useUpdateLink } from '../lib/links';
 import { Button } from './ui/Button';
@@ -83,6 +85,99 @@ function DeleteButton({ onConfirm, isPending }: { onConfirm: () => void; isPendi
   );
 }
 
+/**
+ * Inline edit, not a modal: same pattern as DeleteButton's two-step confirm -
+ * everything else in this row is inline, so a modal would be the one thing
+ * that isn't.
+ */
+function DestinationCell({ link }: { link: LinkDto }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [value, setValue] = useState(link.originalUrl);
+  const [error, setError] = useState<string | null>(null);
+  const updateLink = useUpdateLink();
+
+  function startEdit() {
+    setValue(link.originalUrl);
+    setError(null);
+    setIsEditing(true);
+  }
+
+  async function save() {
+    const parsed = destinationUrlSchema.safeParse(value);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'Invalid URL');
+      return;
+    }
+    if (parsed.data === link.originalUrl) {
+      setIsEditing(false);
+      return;
+    }
+    try {
+      await updateLink.mutateAsync({ id: link.id, patch: { url: parsed.data } });
+      setIsEditing(false);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong.');
+    }
+  }
+
+  if (!isEditing) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="block max-w-xs truncate text-gray-600" title={link.originalUrl}>
+          {link.originalUrl}
+        </span>
+        <button
+          type="button"
+          onClick={startEdit}
+          className="text-gray-400 hover:text-gray-700"
+          aria-label="Edit destination URL"
+          title="Edit destination URL"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1.5">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void save();
+            if (e.key === 'Escape') setIsEditing(false);
+          }}
+          aria-label="Destination URL"
+          autoFocus
+          className="w-full min-w-0 rounded border border-gray-300 px-2 py-1 text-sm"
+        />
+        <button
+          type="button"
+          onClick={save}
+          disabled={updateLink.isPending}
+          className="text-gray-400 hover:text-green-600 disabled:opacity-50"
+          aria-label="Save destination URL"
+        >
+          <Check className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsEditing(false)}
+          disabled={updateLink.isPending}
+          className="text-gray-400 hover:text-gray-700 disabled:opacity-50"
+          aria-label="Cancel editing destination URL"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
+
 export function LinksTable({ links }: { links: LinkDto[] }) {
   const updateLink = useUpdateLink();
   const deleteLink = useDeleteLink();
@@ -125,9 +220,7 @@ export function LinksTable({ links }: { links: LinkDto[] }) {
                 </div>
               </td>
               <td className="max-w-xs py-3 pr-4">
-                <span className="block truncate text-gray-600" title={link.originalUrl}>
-                  {link.originalUrl}
-                </span>
+                <DestinationCell link={link} />
               </td>
               <td className="py-3 pr-4 tabular-nums text-gray-900">{link.clickCount}</td>
               <td className="py-3 pr-4 whitespace-nowrap text-gray-500">

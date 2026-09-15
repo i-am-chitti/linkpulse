@@ -108,4 +108,85 @@ describe('LinksTable', () => {
 
     expect(screen.getByRole('button', { name: 'Disabled' })).toBeInTheDocument();
   });
+
+  describe('editing the destination url', () => {
+    it('shows an editable input, pre-filled, on the pencil click', async () => {
+      const user = userEvent.setup();
+      renderWithQuery(<LinksTable links={[makeLink()]} />);
+
+      await user.click(screen.getByRole('button', { name: 'Edit destination URL' }));
+
+      expect(screen.getByLabelText('Destination URL')).toHaveValue(
+        'https://example.com/destination',
+      );
+    });
+
+    it('rejects an invalid url client-side, without calling the api', async () => {
+      const fetchMock = vi.spyOn(globalThis, 'fetch');
+      const user = userEvent.setup();
+      renderWithQuery(<LinksTable links={[makeLink()]} />);
+
+      await user.click(screen.getByRole('button', { name: 'Edit destination URL' }));
+      await user.clear(screen.getByLabelText('Destination URL'));
+      await user.type(screen.getByLabelText('Destination URL'), 'not-a-url');
+      await user.click(screen.getByRole('button', { name: 'Save destination URL' }));
+
+      expect(await screen.findByText(/absolute http/i)).toBeInTheDocument();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('saves a valid url and leaves edit mode', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        jsonResponse(200, makeLink({ originalUrl: 'https://example.com/new' })),
+      );
+      const user = userEvent.setup();
+      renderWithQuery(<LinksTable links={[makeLink()]} />);
+
+      await user.click(screen.getByRole('button', { name: 'Edit destination URL' }));
+      await user.clear(screen.getByLabelText('Destination URL'));
+      await user.type(screen.getByLabelText('Destination URL'), 'https://example.com/new');
+      await user.click(screen.getByRole('button', { name: 'Save destination URL' }));
+
+      await waitFor(() =>
+        expect(globalThis.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/links/1'),
+          expect.objectContaining({
+            method: 'PATCH',
+            body: JSON.stringify({ url: 'https://example.com/new' }),
+          }),
+        ),
+      );
+      await waitFor(() =>
+        expect(screen.queryByLabelText('Destination URL')).not.toBeInTheDocument(),
+      );
+    });
+
+    it('cancels on Escape without calling the api', async () => {
+      const fetchMock = vi.spyOn(globalThis, 'fetch');
+      const user = userEvent.setup();
+      renderWithQuery(<LinksTable links={[makeLink()]} />);
+
+      await user.click(screen.getByRole('button', { name: 'Edit destination URL' }));
+      await user.keyboard('{Escape}');
+
+      expect(screen.queryByLabelText('Destination URL')).not.toBeInTheDocument();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('shows a conflict from the api as an inline error, staying in edit mode', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        jsonResponse(409, { error: { code: 'CONFLICT', message: 'Something went wrong there' } }),
+      );
+      const user = userEvent.setup();
+      renderWithQuery(<LinksTable links={[makeLink()]} />);
+
+      await user.click(screen.getByRole('button', { name: 'Edit destination URL' }));
+      await user.clear(screen.getByLabelText('Destination URL'));
+      await user.type(screen.getByLabelText('Destination URL'), 'https://example.com/new');
+      await user.click(screen.getByRole('button', { name: 'Save destination URL' }));
+
+      expect(await screen.findByText('Something went wrong there')).toBeInTheDocument();
+      expect(screen.getByLabelText('Destination URL')).toBeInTheDocument();
+    });
+  });
 });
