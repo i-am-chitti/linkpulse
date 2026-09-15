@@ -59,6 +59,25 @@ const envSchema = z.object({
   RATE_LIMIT_AUTH_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).default(20),
 
   /**
+   * Domains PROJECT_SPEC.md section 2.3 calls "known malicious URLs" -
+   * comma-separated, checked by hostname/subdomain match against every link
+   * create or destination edit. Defaults to Google's own documented Safe
+   * Browsing *test* domains (they never resolve to anything real), so the
+   * feature demonstrably works out of the box without pretending to ship
+   * real threat intelligence - a real deployment replaces this with its own
+   * feed.
+   */
+  URL_BLOCKLIST: z
+    .string()
+    .default('malware.testing.google.test,testsafebrowsing.appspot.com')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((domain) => domain.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+
+  /**
    * Clicks the worker writes per transaction. Larger batches amortise the
    * round trip but hold the transaction open longer.
    */
