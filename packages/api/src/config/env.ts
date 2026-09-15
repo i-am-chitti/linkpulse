@@ -93,6 +93,25 @@ const envSchema = z.object({
         .map((origin) => origin.trim())
         .filter(Boolean),
     ),
+
+  /**
+   * Where the OAuth callback redirects the browser once a session cookie is
+   * set. A distinct var from CORS_ORIGINS, which can list several origins
+   * and exists for a different purpose (which browsers may call the API);
+   * this is the one frontend a human is actually redirected to.
+   */
+  WEB_ORIGIN: z.url().default('http://localhost:3000'),
+
+  /**
+   * OAuth client credentials, one pair per provider. Both optional: a
+   * provider with no id/secret configured simply 404s at the route rather
+   * than failing the whole API at boot, since - unlike JWT_SECRET - there is
+   * no safe default and no expectation every deployment sets these up.
+   */
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 /**

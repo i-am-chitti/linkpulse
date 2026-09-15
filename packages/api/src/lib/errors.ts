@@ -39,3 +39,6 @@ export const gone = (message = 'This link is no longer available') =>
 
 export const tooManyRequests = (message = 'Rate limit exceeded') =>
   new AppError(429, 'TOO_MANY_REQUESTS', message);
+
+export const serviceUnavailable = (message: string) =>
+  new AppError(503, 'SERVICE_UNAVAILABLE', message);
