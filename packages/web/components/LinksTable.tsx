@@ -8,6 +8,7 @@ import { ApiError } from '../lib/api';
 import { copyToClipboard } from '../lib/clipboard';
 import { useDeleteLink, useUpdateLink } from '../lib/links';
 import { Button } from './ui/Button';
+import { Switch } from './ui/Switch';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -227,19 +228,24 @@ export function LinksTable({ links }: { links: LinkDto[] }) {
                 {formatDate(link.createdAt)}
               </td>
               <td className="py-3 pr-4">
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateLink.mutate({ id: link.id, patch: { isActive: !link.isActive } })
-                  }
-                  className={
-                    link.isActive
-                      ? 'rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700'
-                      : 'rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500'
-                  }
-                >
-                  {link.isActive ? 'Active' : 'Disabled'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={link.isActive}
+                    onChange={() =>
+                      updateLink.mutate({ id: link.id, patch: { isActive: !link.isActive } })
+                    }
+                    label={link.isActive ? 'Disable link' : 'Enable link'}
+                  />
+                  <span
+                    className={
+                      link.isActive
+                        ? 'text-xs font-medium text-green-700'
+                        : 'text-xs font-medium text-gray-500'
+                    }
+                  >
+                    {link.isActive ? 'Active' : 'Disabled'}
+                  </span>
+                </div>
               </td>
               <td className="py-3 pr-2">
                 <div className="flex items-center justify-end gap-1">

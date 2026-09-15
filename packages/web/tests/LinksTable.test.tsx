@@ -83,16 +83,18 @@ describe('LinksTable', () => {
     );
   });
 
-  it('toggles active status with a single click, and reflects the current state', async () => {
+  it('toggles active status via the switch, and reflects the current state', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       jsonResponse(200, makeLink({ isActive: false })),
     );
     const user = userEvent.setup();
     renderWithQuery(<LinksTable links={[makeLink({ isActive: true })]} />);
 
-    expect(screen.getByRole('button', { name: 'Active' })).toBeInTheDocument();
+    const toggle = screen.getByRole('switch', { name: 'Disable link' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText('Active')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Active' }));
+    await user.click(toggle);
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/links/1'),
@@ -103,10 +105,14 @@ describe('LinksTable', () => {
     );
   });
 
-  it('shows a disabled badge for an inactive link', () => {
+  it('shows an off switch and a disabled label for an inactive link', () => {
     renderWithQuery(<LinksTable links={[makeLink({ isActive: false })]} />);
 
-    expect(screen.getByRole('button', { name: 'Disabled' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Enable link' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+    expect(screen.getByText('Disabled')).toBeInTheDocument();
   });
 
   describe('editing the destination url', () => {
