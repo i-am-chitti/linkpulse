@@ -97,6 +97,13 @@ docker compose exec postgres psql -U linkpulse -d linkpulse \
   -c 'SELECT device_type, browser, country, referrer, count(*)
         FROM clicks GROUP BY 1,2,3,4 ORDER BY 5 DESC;'
 
+# The same worker also sweeps expired guest links and stale refresh tokens,
+# hourly (CLEANUP_INTERVAL_MINUTES) - on startup too, so restarting it forces
+# an immediate sweep for a demo. Watch it happen:
+docker compose restart worker && docker compose logs worker --tail 5
+# {"...","purgedLinks":N,"purgedTokens":N,"msg":"cleanup sweep complete"}
+# (only logged when something was actually purged)
+
 # 11 guest-shorten requests from one IP trips the 10/min anonymous limit.
 for i in $(seq 1 11); do
   curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:4001/api/shorten \
@@ -180,6 +187,7 @@ diluted by ramp-up/down while its P95 reflects the sustained-target phase.
 - [x] Dashboard charts
 - [x] Sliding-window rate limiter (Redis Lua, per-IP and per-user tiers)
 - [x] Malicious-URL blocklist on link create/edit (domain + subdomain match)
+- [x] Background cleanup: expired guest links and stale refresh tokens purged hourly
 - [x] Next.js dashboard shell: auth pages, protected layout, session restore
 - [x] Link list, search/filter/pagination, create form, per-row actions
 - [x] Per-link analytics: clicks over time, top countries, devices, browsers, referrers
