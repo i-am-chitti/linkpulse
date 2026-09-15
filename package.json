@@ -16,7 +16,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "verify:reset": "node scripts/verify.mjs reset",
+    "verify:clean": "node scripts/verify.mjs clean",
+    "verify:down": "node scripts/verify.mjs down"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

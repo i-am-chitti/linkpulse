@@ -154,6 +154,24 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 | `pnpm lint`      | ESLint across the workspace            |
 | `pnpm format`    | Prettier write                         |
 
+## Live verification
+
+`docker-compose.verify.yml` is a second, fully isolated stack - its own
+Postgres, Redis, and containers, on ports 3001/4002/5434/6382 - for
+browser-driven checks (Playwright, manual clicking around) that need a real
+running app but must never touch the dev stack's database. It costs nothing
+to reset and nothing to wipe, on purpose:
+
+```bash
+pnpm verify:reset   # fresh containers, fresh database, migrations applied
+pnpm verify:clean   # truncate all data, keep the stack running
+pnpm verify:down    # stop everything and drop the volume
+```
+
+Needs no `.env` and no setup - `JWT_SECRET` is a fixed dummy value valid only
+inside this stack. `docker compose up -d` (the dev stack) and this can both
+be running at once.
+
 ## Benchmarks
 
 k6 load tests against the redirect hot path, link creation, analytics reads,

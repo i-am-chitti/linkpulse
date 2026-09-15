@@ -1,0 +1,131 @@
+# Isolated stack for live/browser-driven verification (Playwright etc.),
+# entirely separate from docker-compose.yml's dev stack: its own Postgres,
+# its own Redis, its own containers, its own project name (`name:` below),
+# on different host ports so both stacks can run at once.
+#
+# The reason this file exists: cleaning up after a verification pass used to
+# mean truncating the dev database's tables directly, which is exactly as
+# dangerous as it sounds the moment that database also holds real data - it
+# did, once, and took a real account with it. This stack has nothing in it
+# but what a verification run put there, so `pnpm verify:clean` can wipe it
+# with no way to reach anything real.
+#
+#   pnpm verify:reset   # fresh containers, fresh database, migrations applied
+#   pnpm verify:clean   # truncate all data, keep the stack running
+#   pnpm verify:down    # stop everything and drop the volume
+#
+# Reachable at http://localhost:3001 (web) and http://localhost:4002 (api).
+
+name: linkpulse-verify
+
+services:
+  postgres-verify:
+    image: postgres:16-alpine
+    container_name: linkpulse-verify-postgres
+    environment:
+      POSTGRES_USER: linkpulse
+      POSTGRES_PASSWORD: linkpulse
+      POSTGRES_DB: linkpulse
+    ports:
+      - '5434:5432'
+    volumes:
+      - verify-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U linkpulse -d linkpulse']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis-verify:
+    image: redis:7-alpine
+    container_name: linkpulse-verify-redis
+    command: ['redis-server', '--maxmemory', '128mb', '--maxmemory-policy', 'allkeys-lru']
+    ports:
+      - '6382:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api-verify:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+      target: runtime
+    container_name: linkpulse-verify-api
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      LOG_LEVEL: info
+      DATABASE_URL: postgresql://linkpulse:linkpulse@postgres-verify:5432/linkpulse
+      REDIS_URL: redis://redis-verify:6379
+      # Fixed, disposable, and only ever valid inside this isolated stack -
+      # nothing this signs is meaningful anywhere else.
+      JWT_SECRET: linkpulse-verify-stack-dummy-secret-never-used-for-anything-real
+      APP_BASE_URL: http://localhost:4002
+      CORS_ORIGINS: http://localhost:3001
+      WEB_ORIGIN: http://localhost:3001
+    ports:
+      - '4002:4000'
+    depends_on:
+      postgres-verify:
+        condition: service_healthy
+      redis-verify:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  worker-verify:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+      target: runtime
+    container_name: linkpulse-verify-worker
+    command: ['node', 'packages/api/dist/worker.js']
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+      DATABASE_URL: postgresql://linkpulse:linkpulse@postgres-verify:5432/linkpulse
+      REDIS_URL: redis://redis-verify:6379
+      APP_BASE_URL: http://localhost:4002
+      JWT_SECRET: linkpulse-verify-stack-dummy-secret-never-used-for-anything-real
+    depends_on:
+      postgres-verify:
+        condition: service_healthy
+      redis-verify:
+        condition: service_healthy
+
+  web-verify:
+    build:
+      context: .
+      dockerfile: packages/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4002
+    container_name: linkpulse-verify-web
+    ports:
+      - '3001:3000'
+    depends_on:
+      api-verify:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  verify-postgres-data:
