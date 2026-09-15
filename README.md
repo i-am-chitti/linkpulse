@@ -104,8 +104,12 @@ for i in $(seq 1 11); do
 done
 # 201 x10, then 429 with X-RateLimit-Remaining: 0 and Retry-After: <seconds>
 
-# Dashboard, at http://localhost:3000: register, land on /dashboard, reload
-# (session survives via the httpOnly refresh cookie), sign out.
+# http://localhost:3000: guest shortening right on the landing page, no
+# account - shorten a url, copy the result, follow it. It expires in 24h and
+# has no analytics, per guest mode's limits (spec section 2.1).
+
+# Register from there and land on /dashboard, reload (session survives via
+# the httpOnly refresh cookie), sign out.
 
 # On /dashboard: shorten a URL (optionally with a custom alias or expiry),
 # search and filter the list, toggle a link active/inactive, copy its short
