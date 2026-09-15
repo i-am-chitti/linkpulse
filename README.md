@@ -112,8 +112,9 @@ done
 # the httpOnly refresh cookie), sign out.
 
 # On /dashboard: shorten a URL (optionally with a custom alias or expiry),
-# search and filter the list, toggle a link active/inactive, copy its short
-# URL, delete it (requires a second confirming click).
+# search and filter the list, edit a link's destination inline (pencil icon),
+# toggle a link active/inactive, copy its short URL, delete it (requires a
+# second confirming click).
 
 # Click a link's analytics icon for clicks-over-time, top countries, device
 # and browser breakdowns, and top referrers, over 7/30/90-day presets.
