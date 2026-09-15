@@ -113,6 +113,12 @@ done
 
 # Click a link's analytics icon for clicks-over-time, top countries, device
 # and browser breakdowns, and top referrers, over 7/30/90-day presets.
+
+# "Continue with GitHub"/"Google" on /login or /register - real OAuth
+# needs GITHUB_CLIENT_ID/SECRET or GOOGLE_CLIENT_ID/SECRET in .env (see
+# .env.example for where to register an app); with neither set, the button
+# still round-trips through the API and lands back on a real error page
+# rather than a dead link.
 ```
 
 `/health` is dependency-free (liveness) so an orchestrator will not restart a
@@ -157,7 +163,7 @@ diluted by ramp-up/down while its P95 reflects the sustained-target phase.
 - [x] Shorten + redirect with Redis read-through cache
 - [x] Auth: email/password, JWT access tokens, rotating refresh tokens
 - [x] Link CRUD scoped to the owner, with cache invalidation
-- [ ] OAuth (GitHub, Google)
+- [x] OAuth (GitHub, Google)
 - [x] Async click tracking (queue + worker)
 - [x] Analytics API (time series and breakdowns)
 - [x] Dashboard charts
