@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Search } from 'lucide-react';
+import { CreatedDateFilter } from '../../components/CreatedDateFilter';
+import type { CreatedDateRange } from '../../components/CreatedDateFilter';
 import { CreateLinkForm } from '../../components/CreateLinkForm';
 import { StatusFilter } from '../../components/StatusFilter';
 import type { StatusFilterValue } from '../../components/StatusFilter';
@@ -18,6 +20,7 @@ export default function DashboardPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilterValue>('all');
+  const [dateRange, setDateRange] = useState<CreatedDateRange>({});
   const debouncedSearch = useDebouncedValue(search);
 
   const { data, isLoading, isError } = useLinks({
@@ -25,6 +28,8 @@ export default function DashboardPage() {
     pageSize: PAGE_SIZE,
     search: debouncedSearch || undefined,
     isActive: status === 'all' ? undefined : status === 'active',
+    createdFrom: dateRange.from,
+    createdTo: dateRange.to,
   });
 
   function handleStatusChange(value: StatusFilterValue) {
@@ -35,6 +40,11 @@ export default function DashboardPage() {
   function handleSearchChange(value: string) {
     setSearch(value);
     setPage(1); // A new search always starts back at page 1.
+  }
+
+  function handleDateRangeChange(value: CreatedDateRange) {
+    setDateRange(value);
+    setPage(1);
   }
 
   return (
@@ -61,6 +71,7 @@ export default function DashboardPage() {
             />
           </div>
           <StatusFilter value={status} onChange={handleStatusChange} />
+          <CreatedDateFilter value={dateRange} onChange={handleDateRangeChange} />
         </div>
 
         {isLoading && <p className="py-10 text-center text-sm text-gray-500">Loading…</p>}
