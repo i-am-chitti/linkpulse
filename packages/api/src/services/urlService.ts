@@ -4,6 +4,7 @@ import type { Link } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { conflict } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
+import { assertUrlNotBlocked } from '../lib/urlBlocklist.js';
 import { generateShortCode } from '../utils/base62.js';
 import {
   cacheGoneLink,
@@ -91,6 +92,8 @@ export interface CreateLinkOptions {
  */
 export async function createLink(options: CreateLinkOptions): Promise<Link> {
   const { url, userId = null, customAlias, expiresAt = null } = options;
+
+  assertUrlNotBlocked(url);
 
   if (customAlias) {
     // Belt and braces: the validator rejects reserved aliases, but this is the

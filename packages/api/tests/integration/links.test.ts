@@ -166,6 +166,17 @@ describe('POST /api/links', () => {
 
     expect(res.status).toBe(400);
   });
+
+  it('refuses a url on the blocklist', async () => {
+    const actor = await signUp('owner@example.com');
+
+    const res = await createLinkRaw(actor, {
+      url: 'https://testsafebrowsing.appspot.com/s/malware.html',
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/blocklist/i);
+  });
 });
 
 describe('GET /api/links', () => {
@@ -449,6 +460,20 @@ describe('PATCH /api/links/:id', () => {
     });
 
     expect(res.status).toBe(400);
+  });
+
+  it('refuses to update the destination to a url on the blocklist', async () => {
+    const actor = await signUp('owner@example.com');
+    const created = await createLink(actor, { url: 'https://example.com' });
+
+    const res = await asActor(actor)(request(app).patch(`/api/links/${created.body.id}`)).send({
+      url: 'https://testsafebrowsing.appspot.com/s/malware.html',
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/blocklist/i);
+    const row = await prisma.link.findUniqueOrThrow({ where: { id: created.body.id } });
+    expect(row.originalUrl).toBe('https://example.com');
   });
 
   it('cannot patch another user’s link', async () => {

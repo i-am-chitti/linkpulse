@@ -10,6 +10,7 @@ import { Prisma } from './../generated/prisma/client.js';
 import type { Link } from './../generated/prisma/client.js';
 import { notFound } from '../lib/errors.js';
 import { prisma } from '../lib/prisma.js';
+import { assertUrlNotBlocked } from '../lib/urlBlocklist.js';
 import { invalidateLink } from './cacheService.js';
 
 /** Prisma's "record required but not found". */
@@ -107,6 +108,8 @@ export async function updateLink(
   id: string,
   patch: UpdateLinkInput,
 ): Promise<Link> {
+  if (patch.url !== undefined) assertUrlNotBlocked(patch.url);
+
   // Scoped read first: it both enforces ownership and gets the short code,
   // which is the cache key and is not part of the patch.
   const existing = await prisma.link.findFirst({

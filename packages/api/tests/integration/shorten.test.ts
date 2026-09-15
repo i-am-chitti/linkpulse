@@ -101,4 +101,13 @@ describe('POST /api/shorten', () => {
     expect(res.status).toBe(400);
     expect(res.body.error.details).toHaveProperty('url');
   });
+
+  it('refuses a url on the blocklist', async () => {
+    const res = await request(app)
+      .post('/api/shorten')
+      .send({ url: 'https://testsafebrowsing.appspot.com/s/malware.html' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/blocklist/i);
+  });
 });
