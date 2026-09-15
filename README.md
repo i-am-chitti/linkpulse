@@ -104,6 +104,12 @@ for i in $(seq 1 11); do
 done
 # 201 x10, then 429 with X-RateLimit-Remaining: 0 and Retry-After: <seconds>
 
+# A blocklisted URL is refused on create and on edit (URL_BLOCKLIST in .env;
+# defaults to Google's own Safe Browsing test domains).
+curl -s -X POST localhost:4001/api/shorten -H 'content-type: application/json' \
+  -d '{"url":"https://testsafebrowsing.appspot.com/s/malware.html"}'
+# {"error":{"code":"BAD_REQUEST","message":"This URL is on the blocklist..."}}
+
 # http://localhost:3000: guest shortening right on the landing page, no
 # account - shorten a url, copy the result, follow it. It expires in 24h and
 # has no analytics, per guest mode's limits (spec section 2.1).
@@ -173,6 +179,7 @@ diluted by ramp-up/down while its P95 reflects the sustained-target phase.
 - [x] Analytics API (time series and breakdowns)
 - [x] Dashboard charts
 - [x] Sliding-window rate limiter (Redis Lua, per-IP and per-user tiers)
+- [x] Malicious-URL blocklist on link create/edit (domain + subdomain match)
 - [x] Next.js dashboard shell: auth pages, protected layout, session restore
 - [x] Link list, search/filter/pagination, create form, per-row actions
 - [x] Per-link analytics: clicks over time, top countries, devices, browsers, referrers
