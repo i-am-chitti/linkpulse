@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { loginSchema, registerSchema } from '@linkpulse/shared';
 import { env, isProduction } from '../config/env.js';
+import type { RequestHandler } from 'express';
 import { requireAuth, actorOf } from '../middleware/auth.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { prisma } from '../lib/prisma.js';
@@ -14,22 +15,29 @@ export const authRouter: Router = Router();
 /**
  * Not in spec section 5.3, which lists no rate limit for these routes: added
  * as a floor against credential stuffing and account-creation spam. One
- * shared per-IP budget across register/login/refresh, tighter than plain
- * link creation, since these are the routes an attacker automates first.
+ * shared per-IP budget across register/login/refresh/oauth, tighter than
+ * plain link creation, since these are the routes an attacker automates
+ * first. Exported so routes/oauth.ts shares this exact bucket rather than
+ * getting its own budget to double-dip through.
  */
-const authRateLimit = rateLimit({ bucket: 'auth', anonLimit: env.RATE_LIMIT_AUTH_PER_MINUTE });
+export const authRateLimit: RequestHandler = rateLimit({
+  bucket: 'auth',
+  anonLimit: env.RATE_LIMIT_AUTH_PER_MINUTE,
+});
 
 /**
  * Path-scoped on purpose.
  *
- * The refresh cookie is only ever needed by the two endpoints below, so
- * scoping it keeps the browser from attaching a long-lived credential to every
- * redirect and API call the user makes.
+ * The refresh cookie is only ever needed by these endpoints, so scoping it
+ * keeps the browser from attaching a long-lived credential to every redirect
+ * and API call the user makes. Exported for routes/oauth.ts, whose callback
+ * issues a session exactly like register/login but has to redirect the
+ * browser rather than return JSON.
  */
 const REFRESH_COOKIE = 'linkpulse_refresh';
 const REFRESH_COOKIE_PATH = '/api/auth';
 
-function setRefreshCookie(res: Response, session: IssuedSession): void {
+export function setRefreshCookie(res: Response, session: IssuedSession): void {
   res.cookie(REFRESH_COOKIE, session.refreshToken, {
     httpOnly: true,
     // Never readable by JavaScript, so XSS cannot lift the session.

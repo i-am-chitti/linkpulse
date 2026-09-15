@@ -56,6 +56,52 @@ async function issueSession(user: User, familyId: string): Promise<IssuedSession
   };
 }
 
+/**
+ * Finds or creates the local account for an OAuth identity, then issues a
+ * session exactly like register/login.
+ *
+ * (provider, providerId) is matched first since it is the stable identity -
+ * a provider account keeps its id even across an email change. Falling back
+ * to email only decides whether a *new* local account gets created; it does
+ * not merge into one that already exists under a different provider. The
+ * schema gives every user exactly one provider and email is globally unique,
+ * so there is no "add GitHub to my existing password account" path here -
+ * doing that safely needs its own linking flow and its own confirmation
+ * step, which is a larger feature than this one.
+ */
+export async function loginWithOAuth(
+  provider: 'GITHUB' | 'GOOGLE',
+  profile: { providerId: string; email: string; name: string | null; avatarUrl: string | null },
+): Promise<IssuedSession> {
+  const email = profile.email.toLowerCase();
+
+  const existingByProvider = await prisma.user.findUnique({
+    where: { provider_providerId: { provider, providerId: profile.providerId } },
+  });
+  if (existingByProvider) {
+    return issueSession(existingByProvider, randomUUID());
+  }
+
+  const existingByEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingByEmail) {
+    throw conflict(
+      `An account with this email already exists via ${existingByEmail.provider.toLowerCase()}. Sign in that way instead.`,
+    );
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      name: profile.name,
+      avatarUrl: profile.avatarUrl,
+      provider,
+      providerId: profile.providerId,
+    },
+  });
+
+  return issueSession(user, randomUUID());
+}
+
 export async function register(input: {
   email: string;
   password: string;

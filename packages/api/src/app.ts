@@ -14,6 +14,7 @@ import { analyticsRouter } from './routes/analytics.js';
 import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 import { linksRouter } from './routes/links.js';
+import { oauthRouter } from './routes/oauth.js';
 import { redirectRouter } from './routes/redirect.js';
 import { shortenRouter } from './routes/shorten.js';
 
@@ -56,6 +57,7 @@ export function createApp(): Express {
 
   app.use(healthRouter);
   app.use(authRouter);
+  app.use(oauthRouter);
 
   /**
    * Auth and the shared per-user rate limit for every /api/links* route,
