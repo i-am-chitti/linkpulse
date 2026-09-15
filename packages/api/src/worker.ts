@@ -10,18 +10,50 @@ import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { closeDatabase } from './lib/prisma.js';
 import { closeRedis } from './lib/redis.js';
+import { purgeExpiredGuestLinks } from './services/cleanupService.js';
 import { dequeueClicks, queueLength } from './services/clickQueue.js';
+import { purgeExpiredRefreshTokens } from './services/authService.js';
 import { processClickBatch } from './workers/clickProcessor.js';
 
 let running = true;
 /** Held so shutdown can wait for an in-flight batch instead of tearing it up. */
 let inFlight: Promise<unknown> = Promise.resolve();
 
+const CLEANUP_INTERVAL_MS = env.CLEANUP_INTERVAL_MINUTES * 60_000;
+/** 0, not Date.now(): a fresh start sweeps once immediately rather than waiting a full interval. */
+let lastCleanupAt = 0;
+
+/**
+ * Piggybacks on the click loop's own cadence rather than a separate timer:
+ * dequeueClicks already wakes this loop at least every CLICK_BLOCK_SECONDS,
+ * which is far more often than CLEANUP_INTERVAL_MS needs, so checking the
+ * elapsed time here costs one Date.now() per idle tick instead of managing
+ * a second concurrent interval and its own shutdown handling.
+ */
+async function maybeRunCleanup(): Promise<void> {
+  if (Date.now() - lastCleanupAt < CLEANUP_INTERVAL_MS) return;
+
+  // Set only on success: a thrown error must not push the next attempt a
+  // full interval away, or a single transient failure silently stalls
+  // cleanup for an hour instead of retrying on the next loop iteration.
+  const [purgedLinks, purgedTokens] = await Promise.all([
+    purgeExpiredGuestLinks(),
+    purgeExpiredRefreshTokens(),
+  ]);
+  lastCleanupAt = Date.now();
+
+  if (purgedLinks > 0 || purgedTokens > 0) {
+    logger.info({ purgedLinks, purgedTokens }, 'cleanup sweep complete');
+  }
+}
+
 async function runLoop(): Promise<void> {
   logger.info({ batchSize: env.CLICK_BATCH_SIZE }, 'click worker started');
 
   while (running) {
     try {
+      await maybeRunCleanup();
+
       // dequeueClicks blocks for CLICK_BLOCK_SECONDS when the queue is empty,
       // so an idle worker costs one Redis call every few seconds, not a spin.
       const events = await dequeueClicks(env.CLICK_BATCH_SIZE);
