@@ -1,8 +1,6 @@
-// config/env.ts computes its exported `env` once, at first import - so the
-// client id/secret env vars must be stubbed before oauthService.ts (and the
-// config/env.js it imports) is ever loaded. A static top-level import would
-// already have locked in the ambient test env's unset values by the time any
-// code in this file ran, hence the dynamic import after stubbing.
+// env vars must be stubbed before oauthService.ts (and config/env.js) first
+// loads - config/env.ts computes its exported `env` once, at import time -
+// hence the dynamic import below instead of a static one.
 import { describe, expect, it, vi } from 'vitest';
 
 vi.stubEnv('GITHUB_CLIENT_ID', 'test-github-client-id');

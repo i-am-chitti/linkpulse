@@ -15,14 +15,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   oauth_failed: 'Something went wrong signing you in.',
 };
 
-/**
- * No token in the URL: the API's oauth callback only ever sets the httpOnly
- * refresh cookie and redirects here with nothing but an optional `error`.
- * AuthProvider's own mount effect (see lib/auth.tsx) already calls
- * /api/auth/refresh on every page load and reads that cookie - the same
- * mechanism a normal reload uses to restore a session - so this page's only
- * job on success is to wait for that to resolve, then leave.
- */
+// No token in the URL: the API redirects here with only an optional `error`,
+// having already set the httpOnly refresh cookie. AuthProvider's mount effect
+// (lib/auth.tsx) reads that cookie on every page load, so success just means
+// waiting for it to resolve.
 function CallbackContent() {
   const searchParams = useSearchParams();
   const { user, isLoading } = useAuth();

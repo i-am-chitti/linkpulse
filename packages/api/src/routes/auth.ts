@@ -17,8 +17,8 @@ export const authRouter: Router = Router();
  * as a floor against credential stuffing and account-creation spam. One
  * shared per-IP budget across register/login/refresh/oauth, tighter than
  * plain link creation, since these are the routes an attacker automates
- * first. Exported so routes/oauth.ts shares this exact bucket rather than
- * getting its own budget to double-dip through.
+ * first. Exported so routes/oauth.ts shares this bucket rather than a
+ * separate one.
  */
 export const authRateLimit: RequestHandler = rateLimit({
   bucket: 'auth',
@@ -26,13 +26,11 @@ export const authRateLimit: RequestHandler = rateLimit({
 });
 
 /**
- * Path-scoped on purpose.
- *
- * The refresh cookie is only ever needed by these endpoints, so scoping it
- * keeps the browser from attaching a long-lived credential to every redirect
- * and API call the user makes. Exported for routes/oauth.ts, whose callback
- * issues a session exactly like register/login but has to redirect the
- * browser rather than return JSON.
+ * Path-scoped on purpose: the refresh cookie is only ever needed by these
+ * endpoints, so scoping it keeps the browser from attaching a long-lived
+ * credential to every redirect and API call the user makes. Exported for
+ * routes/oauth.ts, whose callback issues a session the same way but redirects
+ * instead of returning JSON.
  */
 const REFRESH_COOKIE = 'linkpulse_refresh';
 const REFRESH_COOKIE_PATH = '/api/auth';

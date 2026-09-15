@@ -60,14 +60,9 @@ async function issueSession(user: User, familyId: string): Promise<IssuedSession
  * Finds or creates the local account for an OAuth identity, then issues a
  * session exactly like register/login.
  *
- * (provider, providerId) is matched first since it is the stable identity -
- * a provider account keeps its id even across an email change. Falling back
- * to email only decides whether a *new* local account gets created; it does
- * not merge into one that already exists under a different provider. The
- * schema gives every user exactly one provider and email is globally unique,
- * so there is no "add GitHub to my existing password account" path here -
- * doing that safely needs its own linking flow and its own confirmation
- * step, which is a larger feature than this one.
+ * No account-linking path: the schema gives every user exactly one provider
+ * and a globally unique email, so an email already owned by a different
+ * provider is rejected rather than merged into it.
  */
 export async function loginWithOAuth(
   provider: 'GITHUB' | 'GOOGLE',

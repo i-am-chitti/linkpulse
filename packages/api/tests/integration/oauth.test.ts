@@ -1,8 +1,6 @@
-// createApp() pulls in config/env.js transitively, which computes its
-// exported `env` once at first import - so the client id/secret vars must be
-// stubbed before that first import happens, hence the dynamic imports below
-// rather than this file's usual static ones. See oauthService.test.ts for
-// the same constraint at the service layer.
+// createApp() pulls in config/env.js, which computes `env` once at first
+// import, so the client id/secret vars must be stubbed first - see
+// oauthService.test.ts for the same constraint at the service layer.
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 

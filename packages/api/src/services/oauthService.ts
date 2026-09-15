@@ -22,9 +22,8 @@ const PROVIDERS: Record<OAuthProviderName, ProviderConfig> = {
     clientId: env.GITHUB_CLIENT_ID,
     clientSecret: env.GITHUB_CLIENT_SECRET,
     authorizeUrl: 'https://github.com/login/oauth/authorize',
-    // user:email, not just read:user: many GitHub accounts keep their email
-    // private, which moves it from the /user response to a separate endpoint
-    // this scope is what makes reachable at all.
+    // user:email: a private-by-default email is absent from /user and only
+    // reachable via /user/emails, which this scope gates.
     scope: 'read:user user:email',
   },
   google: {
@@ -39,11 +38,7 @@ export function isKnownProvider(value: string): value is OAuthProviderName {
   return value === 'github' || value === 'google';
 }
 
-/**
- * Both id and secret, or neither: a provider with no app registered on it
- * 503s at the route rather than failing the whole API at boot, since - unlike
- * JWT_SECRET - there is no expectation every deployment configures both.
- */
+/** An unconfigured provider 503s here rather than failing the API at boot. */
 function requireConfig(provider: OAuthProviderName): { clientId: string; clientSecret: string } {
   const config = PROVIDERS[provider];
   if (!config.clientId || !config.clientSecret) {
@@ -56,7 +51,6 @@ function callbackUrl(provider: OAuthProviderName): string {
   return `${env.APP_BASE_URL}/api/auth/oauth/${provider}/callback`;
 }
 
-/** Where the browser is sent to let the user grant access. */
 export function buildAuthorizationUrl(provider: OAuthProviderName, state: string): string {
   const { clientId } = requireConfig(provider);
   const config = PROVIDERS[provider];
@@ -110,8 +104,6 @@ async function fetchGithubProfile(accessToken: string): Promise<OAuthProfile> {
 
   let email = user.email;
   if (!email) {
-    // A private-by-default email is absent from /user entirely; only this
-    // separate, scope-gated endpoint can see it.
     const emailsRes = await fetch('https://api.github.com/user/emails', { headers });
     if (emailsRes.ok) {
       const emails = (await emailsRes.json()) as Array<{
@@ -179,7 +171,6 @@ async function fetchGoogleProfile(accessToken: string): Promise<OAuthProfile> {
   };
 }
 
-/** Exchanges an authorization code for the caller's normalized profile. */
 export async function resolveOAuthProfile(
   provider: OAuthProviderName,
   code: string,

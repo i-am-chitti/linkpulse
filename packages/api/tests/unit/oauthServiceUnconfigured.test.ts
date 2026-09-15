@@ -1,8 +1,6 @@
-// Deliberately a separate file from oauthService.test.ts: that file stubs
-// GITHUB/GOOGLE client env vars before its first import, and vitest isolates
-// each test file's module registry, so this file's plain static import sees
-// the ambient test env instead - which, like a real deployment that never
-// registered an OAuth app, leaves these unset.
+// A separate file from oauthService.test.ts, which stubs GITHUB/GOOGLE env
+// vars: vitest isolates each file's module registry, so this file's plain
+// static import sees the ambient (unset) test env instead.
 import { describe, expect, it } from 'vitest';
 import { buildAuthorizationUrl, resolveOAuthProfile } from '../../src/services/oauthService.js';
 

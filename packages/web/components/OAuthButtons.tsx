@@ -1,12 +1,7 @@
 import { API_BASE_URL } from '../lib/env';
 
-/**
- * Real cross-origin navigations, not fetch() calls: the OAuth dance needs the
- * browser itself to land on the provider's consent screen and later on the
- * API's callback route, which a client-side fetch could not do (and must
- * not - the provider's session cookies, and the state cookie the callback
- * checks, only ever travel with a real navigation).
- */
+// Rendered as a real <a href>, not a fetch: the state cookie the callback
+// checks only travels with an actual navigation.
 function oauthHref(provider: 'github' | 'google'): string {
   return `${API_BASE_URL}/api/auth/oauth/${provider}`;
 }
@@ -15,7 +10,7 @@ const LINK_CLASS =
   'inline-flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 ' +
   'bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50';
 
-/** lucide-react ships no brand logos (GitHub's included), so both marks below are hand-drawn SVG. */
+// lucide-react ships no brand logos, so both icons below are hand-drawn SVG.
 function GithubIcon() {
   return (
     <svg viewBox="0 0 16 16" className="h-4 w-4 fill-current" aria-hidden="true">
@@ -24,7 +19,6 @@ function GithubIcon() {
   );
 }
 
-/** Minimal four-color Google "G" mark. */
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 18 18" className="h-4 w-4" aria-hidden="true">

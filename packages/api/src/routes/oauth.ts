@@ -16,8 +16,7 @@ import { authRateLimit, setRefreshCookie } from './auth.js';
 export const oauthRouter: Router = Router();
 
 const STATE_COOKIE = 'linkpulse_oauth_state';
-// Narrower than the refresh cookie's /api/auth: this value is worthless
-// outside the two routes below and should never travel further than that.
+// Narrower than the refresh cookie's /api/auth: worthless outside these two routes.
 const STATE_COOKIE_PATH = '/api/auth/oauth';
 
 function stateCookieOptions() {
@@ -26,10 +25,7 @@ function stateCookieOptions() {
     secure: isProduction,
     sameSite: 'lax' as const,
     path: STATE_COOKIE_PATH,
-    // Generous for a real login (provider consent screens are slow to click
-    // through), short enough that a stale value left over from an abandoned
-    // attempt is worthless well before anyone could reuse it.
-    maxAge: 10 * 60 * 1000,
+    maxAge: 10 * 60 * 1000, // long enough for a real login, short enough that a stale value is worthless
   };
 }
 
@@ -45,17 +41,12 @@ function redirectWithError(res: Response, code: string): void {
   res.redirect(302, url.toString());
 }
 
-/**
- * Starts the flow: mint anti-CSRF state, stash it in a short-lived cookie,
- * send the browser to the provider's own consent screen.
- */
 oauthRouter.get<{ provider: string }>('/api/auth/oauth/:provider', authRateLimit, (req, res) => {
   const provider = providerFrom(req.params.provider);
   const state = randomBytes(24).toString('base64url');
 
-  // Caught here, not left to the default JSON error handler: a browser
-  // followed a real <a href> to get here, so a raw JSON body would be a
-  // dead end rather than something the frontend's error page can show.
+  // Caught here rather than left to the default JSON error handler: a
+  // browser followed a real <a href> to get here, so raw JSON is a dead end.
   let authorizationUrl: string;
   try {
     authorizationUrl = buildAuthorizationUrl(provider, state);
@@ -71,12 +62,8 @@ oauthRouter.get<{ provider: string }>('/api/auth/oauth/:provider', authRateLimit
   res.redirect(302, authorizationUrl);
 });
 
-/**
- * Where the provider sends the browser back. Never returns JSON: by the time
- * this runs, we are mid full-page-navigation, not answering a fetch() the
- * frontend could inspect - every outcome, success or failure, is a redirect
- * back to the one frontend page built to handle both (/oauth/callback).
- */
+// Never returns JSON: every outcome, success or failure, is a redirect back
+// to /oauth/callback, the one frontend page built to handle both.
 oauthRouter.get<{ provider: string }>(
   '/api/auth/oauth/:provider/callback',
   authRateLimit,
@@ -89,9 +76,8 @@ oauthRouter.get<{ provider: string }>(
     const state = req.query.state;
     const code = req.query.code;
 
-    // Compared even when one side is missing/malformed: a bare "state
-    // differs" check would let an absent cookie (typeof undefined) slip
-    // through if it ever happened to equal an absent query param.
+    // expectedState checked explicitly, not just state !== expectedState:
+    // two absent values would otherwise compare equal.
     if (!expectedState || typeof state !== 'string' || state !== expectedState) {
       redirectWithError(res, 'invalid_state');
       return;
