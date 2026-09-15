@@ -18,26 +18,28 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
       <span className="text-xs text-gray-500">
         Page {page} of {totalPages} · {total} link{total === 1 ? '' : 's'}
       </span>
-      <div className="flex gap-2">
-        <Button
-          variant="secondary"
-          className="!px-2 !py-1"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="secondary"
-          className="!px-2 !py-1"
-          disabled={page >= totalPages}
-          onClick={() => onPageChange(page + 1)}
-          aria-label="Next page"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+      {totalPages > 1 && (
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            className="!px-2 !py-1"
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="secondary"
+            className="!px-2 !py-1"
+            disabled={page >= totalPages}
+            onClick={() => onPageChange(page + 1)}
+            aria-label="Next page"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
