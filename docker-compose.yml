@@ -66,6 +66,13 @@ services:
       JWT_SECRET: '${JWT_SECRET:?set JWT_SECRET in .env, generate one with openssl rand -hex 32}'
       APP_BASE_URL: http://localhost:${API_PORT:-4001}
       CORS_ORIGINS: http://localhost:${WEB_PORT:-3000}
+      WEB_ORIGIN: http://localhost:${WEB_PORT:-3000}
+      # Optional: unset in .env leaves these empty, and that provider's route
+      # 503s rather than the container failing to start - see .env.example.
+      GITHUB_CLIENT_ID: '${GITHUB_CLIENT_ID:-}'
+      GITHUB_CLIENT_SECRET: '${GITHUB_CLIENT_SECRET:-}'
+      GOOGLE_CLIENT_ID: '${GOOGLE_CLIENT_ID:-}'
+      GOOGLE_CLIENT_SECRET: '${GOOGLE_CLIENT_SECRET:-}'
     ports:
       - '${API_PORT:-4001}:4000'
     depends_on:
