@@ -29,7 +29,7 @@ packages/api      Express API: redirects, link CRUD, analytics, auth
   prisma/         schema and migrations
   src/generated/  Prisma client, generated - gitignored
 packages/web      Next.js dashboard: auth pages, protected layout
-benchmarks/k6     load tests                               (not yet scaffolded)
+benchmarks/k6     load tests: redirect, create, analytics, mixed workload
 ```
 
 Two processes run from the `api` package: `src/index.ts` serves HTTP, and
@@ -130,6 +130,26 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 | `pnpm lint`      | ESLint across the workspace            |
 | `pnpm format`    | Prettier write                         |
 
+## Benchmarks
+
+k6 load tests against the redirect hot path, link creation, analytics reads,
+and a mixed workload. Full setup and how to reproduce: [`benchmarks/README.md`](benchmarks/README.md).
+Latest run:
+
+| Scenario                                             | Target                | Achieved RPS                   | P95  | Errors |
+| ---------------------------------------------------- | --------------------- | ------------------------------ | ---- | ------ |
+| Redirect Throughput (`GET /:shortCode`)              | >2,500 RPS, P95 <50ms | 2,077 (2,500 sustained target) | 40ms | 0%     |
+| URL Creation (`POST /api/links`)                     | >200 RPS, P95 <200ms  | 457                            | 19ms | 0%     |
+| Analytics Read (`GET /api/links/:id/analytics`)      | >100 RPS, P95 <300ms  | 280                            | 13ms | 0%     |
+| Mixed Workload (80% redirect / 15% create / 5% read) | Stable under load     | 1,824                          | 30ms | 0%     |
+
+Diagnosed with `docker stats` while pushing past the redirect target: the
+ceiling above ~2,500 RPS is one saturated CPU core on the single Node.js api
+process (~110-130% CPU), not Redis or Postgres (20-26% CPU each) - see
+[`benchmarks/reports/RESULTS.md`](benchmarks/reports/RESULTS.md) for the full
+notes, including why the redirect row's RPS figure is a whole-run average
+diluted by ramp-up/down while its P95 reflects the sustained-target phase.
+
 ## Status
 
 - [x] Monorepo scaffold, shared schemas, API skeleton, Docker Compose
@@ -146,4 +166,4 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 - [x] Link list, search/filter/pagination, create form, per-row actions
 - [x] Per-link analytics: clicks over time, top countries, devices, browsers, referrers
 - [x] CI/CD: lint, typecheck, build and test on every push/PR; Docker images published to GHCR on merge to main
-- [ ] k6 benchmarks
+- [x] k6 benchmarks
