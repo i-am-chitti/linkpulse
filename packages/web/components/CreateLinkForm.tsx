@@ -79,7 +79,7 @@ export function CreateLinkForm({ onCreated }: { onCreated?: () => void }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3" noValidate>
-      <div className="flex gap-2">
+      <div className="flex items-start gap-2">
         <div className="flex-1">
           <Input
             placeholder="https://example.com/a/very/long/url"

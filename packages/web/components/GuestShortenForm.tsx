@@ -50,7 +50,7 @@ export function GuestShortenForm() {
 
   return (
     <div className="flex flex-col gap-4">
-      <form onSubmit={handleSubmit(onSubmit)} className="flex gap-2" noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex items-start gap-2" noValidate>
         <div className="flex-1">
           <Input
             placeholder="https://example.com/a/very/long/url"
