@@ -51,7 +51,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Your links</h1>
-        <p className="mt-1 text-gray-600">Shorten a URL and track who clicks it.</p>
+        <p className="mt-1 text-gray-600">Shorten a URL and see where its clicks come from.</p>
       </div>
 
       <Card>
