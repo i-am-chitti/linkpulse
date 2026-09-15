@@ -5,14 +5,23 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { registerSchema } from '@linkpulse/shared';
 import type { RegisterInput } from '@linkpulse/shared';
 import { ApiError } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
+import { emptyToUndefined } from '../../../lib/zodHelpers';
 import { OAuthButtons } from '../../../components/OAuthButtons';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
+
+// registerSchema's own name field, not registerSchema directly: an untouched
+// optional field submits "", which name's min(1) would otherwise reject the
+// same way it rejects any too-short name - see lib/zodHelpers.ts.
+export const formSchema = registerSchema.extend({
+  name: z.preprocess(emptyToUndefined, registerSchema.shape.name),
+});
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();
@@ -23,7 +32,7 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) });
+  } = useForm({ resolver: zodResolver(formSchema) });
 
   async function onSubmit(input: RegisterInput) {
     setFormError(null);
