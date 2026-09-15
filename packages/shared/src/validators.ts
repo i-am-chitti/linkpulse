@@ -80,12 +80,20 @@ export const updateLinkSchema = z
   })
   .refine((body) => Object.keys(body).length > 0, 'At least one field must be provided');
 
-export const listLinksQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
-  search: z.string().trim().min(1).max(200).optional(),
-  isActive: z.stringbool().optional(),
-});
+export const listLinksQuerySchema = z
+  .object({
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+    search: z.string().trim().min(1).max(200).optional(),
+    isActive: z.stringbool().optional(),
+    /** Both inclusive, filtering on the link's createdAt calendar day (UTC). */
+    createdFrom: z.iso.date().optional(),
+    createdTo: z.iso.date().optional(),
+  })
+  .refine(({ createdFrom, createdTo }) => !createdFrom || !createdTo || createdFrom <= createdTo, {
+    error: '"createdFrom" must not be after "createdTo"',
+    path: ['createdFrom'],
+  });
 
 export const registerSchema = z.object({
   email: z.email().max(255),

@@ -127,6 +127,31 @@ describe('listLinksQuerySchema', () => {
     expect(listLinksQuerySchema.parse({ isActive: 'true' }).isActive).toBe(true);
     expect(listLinksQuerySchema.parse({ isActive: 'false' }).isActive).toBe(false);
   });
+
+  it('accepts a createdFrom/createdTo date range', () => {
+    const result = listLinksQuerySchema.safeParse({
+      createdFrom: '2026-01-01',
+      createdTo: '2026-01-31',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects createdFrom after createdTo', () => {
+    const result = listLinksQuerySchema.safeParse({
+      createdFrom: '2026-02-01',
+      createdTo: '2026-01-01',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('allows either end of the range alone', () => {
+    expect(listLinksQuerySchema.safeParse({ createdFrom: '2026-01-01' }).success).toBe(true);
+    expect(listLinksQuerySchema.safeParse({ createdTo: '2026-01-01' }).success).toBe(true);
+  });
+
+  it('rejects a malformed date', () => {
+    expect(listLinksQuerySchema.safeParse({ createdFrom: 'not-a-date' }).success).toBe(false);
+  });
 });
 
 describe('shortenGuestSchema', () => {
