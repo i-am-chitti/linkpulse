@@ -48,6 +48,18 @@ export async function listLinks(userId: string, query: ListLinksQuery): Promise<
     where.isActive = query.isActive;
   }
 
+  // createdTo's day is inclusive, so the upper bound is the start of the
+  // *next* UTC day - createdAt is a precise timestamp, not a calendar day
+  // column, so "on or before 2026-03-05" means "before 2026-03-06T00:00:00Z".
+  if (query.createdFrom || query.createdTo) {
+    where.createdAt = {
+      ...(query.createdFrom ? { gte: new Date(`${query.createdFrom}T00:00:00.000Z`) } : {}),
+      ...(query.createdTo
+        ? { lt: new Date(new Date(`${query.createdTo}T00:00:00.000Z`).getTime() + 86_400_000) }
+        : {}),
+    };
+  }
+
   // One transaction so the count cannot disagree with the page contents.
   const [total, items] = await prisma.$transaction([
     prisma.link.count({ where }),

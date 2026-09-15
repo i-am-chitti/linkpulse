@@ -256,6 +256,44 @@ describe('GET /api/links', () => {
     expect(active.body.items.map((l: { id: string }) => l.id)).toEqual([kept.body.id]);
     expect(inactive.body.items.map((l: { id: string }) => l.id)).toEqual([disabled.body.id]);
   });
+
+  it('filters by createdFrom/createdTo, inclusive of both days', async () => {
+    const actor = await signUp('owner@example.com');
+    const inJanuary = await createLink(actor, { url: 'https://example.com/jan' });
+    const inMarch = await createLink(actor, { url: 'https://example.com/mar' });
+    // createdAt defaults to now() at insert time, so backdating it directly
+    // is the only way to exercise a date filter without waiting real days.
+    await prisma.link.update({
+      where: { id: inJanuary.body.id },
+      data: { createdAt: new Date('2026-01-15T12:00:00Z') },
+    });
+    await prisma.link.update({
+      where: { id: inMarch.body.id },
+      data: { createdAt: new Date('2026-03-15T12:00:00Z') },
+    });
+
+    const januaryOnly = await asActor(actor)(
+      request(app).get('/api/links?createdFrom=2026-01-01&createdTo=2026-01-31'),
+    );
+    const fromFebOn = await asActor(actor)(request(app).get('/api/links?createdFrom=2026-02-01'));
+    const exactDay = await asActor(actor)(
+      request(app).get('/api/links?createdFrom=2026-01-15&createdTo=2026-01-15'),
+    );
+
+    expect(januaryOnly.body.items.map((l: { id: string }) => l.id)).toEqual([inJanuary.body.id]);
+    expect(fromFebOn.body.items.map((l: { id: string }) => l.id)).toEqual([inMarch.body.id]);
+    expect(exactDay.body.items.map((l: { id: string }) => l.id)).toEqual([inJanuary.body.id]);
+  });
+
+  it('rejects createdFrom after createdTo', async () => {
+    const actor = await signUp('owner@example.com');
+
+    const res = await asActor(actor)(
+      request(app).get('/api/links?createdFrom=2026-02-01&createdTo=2026-01-01'),
+    );
+
+    expect(res.status).toBe(400);
+  });
 });
 
 describe('GET /api/links/:id', () => {
