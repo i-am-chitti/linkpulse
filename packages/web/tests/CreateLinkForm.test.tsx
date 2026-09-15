@@ -89,6 +89,21 @@ describe('CreateLinkForm', () => {
     await waitFor(() => expect(onCreated).toHaveBeenCalled());
   });
 
+  it('exposes the options toggle as a real disclosure control, not plain text', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<CreateLinkForm />);
+
+    const toggle = screen.getByRole('button', { name: /custom alias or expiry/i });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByLabelText('Custom alias')).not.toBeInTheDocument();
+
+    await user.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByLabelText('Custom alias')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hide options' })).toBeInTheDocument();
+  });
+
   it('shows a taken-alias conflict from the api as a form-level error', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       jsonResponse(409, { error: { code: 'CONFLICT', message: 'That alias is already taken' } }),

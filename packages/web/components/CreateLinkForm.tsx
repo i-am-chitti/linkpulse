@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -96,9 +97,15 @@ export function CreateLinkForm({ onCreated }: { onCreated?: () => void }) {
       <button
         type="button"
         onClick={() => setShowOptions((v) => !v)}
-        className="self-start text-sm text-gray-500 hover:text-gray-700"
+        aria-expanded={showOptions}
+        className="inline-flex w-fit items-center gap-1 self-start text-sm text-gray-500 hover:text-gray-700"
       >
-        {showOptions ? 'Hide options' : 'Custom alias or expiry…'}
+        {showOptions ? (
+          <ChevronUp className="h-3.5 w-3.5" />
+        ) : (
+          <ChevronDown className="h-3.5 w-3.5" />
+        )}
+        {showOptions ? 'Hide options' : 'Custom alias or expiry'}
       </button>
 
       {showOptions && (
