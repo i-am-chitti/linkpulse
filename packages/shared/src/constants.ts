@@ -1,7 +1,7 @@
 /** Base62 alphabet used for short codes. Order is not significant. */
 export const BASE62_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-/** 62^7 == ~3.5 trillion combinations. See PROJECT_SPEC.md section 8. */
+/** 62^7 == ~3.5 trillion combinations. */
 export const SHORT_CODE_LENGTH = 7;
 
 /** How long a resolved URL stays in the Redis read-through cache. */

@@ -10,8 +10,8 @@ import { Card } from '../components/ui/Card';
 
 /**
  * A signed-in visitor has nothing to do here - straight to their dashboard.
- * A signed-out one gets PROJECT_SPEC.md section 2.1's guest mode: shorten a
- * link with no account, right here, or sign in for saved links and analytics.
+ * A signed-out one gets guest mode: shorten a link with no account, right
+ * here, or sign in for saved links and analytics.
  */
 export default function HomePage() {
   const { user, isLoading } = useAuth();

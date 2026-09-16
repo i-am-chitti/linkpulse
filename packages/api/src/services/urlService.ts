@@ -126,7 +126,7 @@ export async function createLink(options: CreateLinkOptions): Promise<Link> {
   throw new Error(`could not allocate a unique short code after ${MAX_CODE_ATTEMPTS} attempts`);
 }
 
-/** Guest links are unowned and short-lived; see PROJECT_SPEC.md section 2.1. */
+/** Guest links are unowned and short-lived. */
 export async function createGuestLink(url: string): Promise<Link> {
   const expiresAt = new Date(Date.now() + GUEST_LINK_TTL_HOURS * 60 * 60 * 1000);
   return createLink({ url, userId: null, expiresAt });

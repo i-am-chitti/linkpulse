@@ -4,8 +4,7 @@
  * Written as raw SQL rather than through the query builder for two reasons:
  * the aggregations here (generate_series gap filling, COUNT DISTINCT,
  * aggregate FILTER) have no ORM equivalent, and the SQL is the part worth
- * reading - it is where the indexes from PROJECT_SPEC.md section 4.2 earn
- * their keep.
+ * reading - it is where the clicks table's composite indexes earn their keep.
  *
  * Every COUNT is cast to int in SQL. Postgres COUNT returns bigint, which
  * Prisma surfaces as a JavaScript BigInt, and JSON.stringify throws on those -

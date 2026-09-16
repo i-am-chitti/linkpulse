@@ -11,11 +11,11 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 
 /**
- * PROJECT_SPEC.md section 2.1's guest mode: unauthenticated, 24h expiry, no
- * custom alias - so, unlike CreateLinkForm, just a url field and no options
- * panel. Not wired through TanStack Query: there is no "my links" list for
- * an anonymous caller to invalidate, so a plain apiFetch call plus local
- * state for the result is all this needs.
+ * Guest mode: unauthenticated, 24h expiry, no custom alias - so, unlike
+ * CreateLinkForm, just a url field and no options panel. Not wired through
+ * TanStack Query: there is no "my links" list for an anonymous caller to
+ * invalidate, so a plain apiFetch call plus local state for the result is
+ * all this needs.
  */
 export function GuestShortenForm() {
   const [result, setResult] = useState<LinkDto | null>(null);

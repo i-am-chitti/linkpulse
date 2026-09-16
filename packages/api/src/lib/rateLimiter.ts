@@ -3,7 +3,7 @@ import { redis } from './redis.js';
 import { logger } from './logger.js';
 
 /**
- * Sliding Window Counter rate limiter. See PROJECT_SPEC.md section 6.4.
+ * Sliding Window Counter rate limiter.
  *
  * Approximates a true sliding window by blending two fixed windows: the
  * current one exactly, the previous one weighted by how much of it still

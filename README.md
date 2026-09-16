@@ -2,24 +2,54 @@
 
 [![CI](https://github.com/i-am-chitti/linkpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/i-am-chitti/linkpulse/actions/workflows/ci.yml)
 
-A high-performance URL shortener with real-time click analytics. Redirects are
-served from a Redis read-through cache, click events are processed off the hot
-path by a background worker, and abuse is bounded by a sliding-window rate
-limiter implemented as a Redis Lua script.
+A production-shaped URL shortener with real-time click analytics, built to
+demonstrate backend engineering: a Redis read-through cache on the redirect
+hot path, an async click pipeline that never blocks a response, a
+Lua-scripted sliding-window rate limiter, rotating refresh tokens with
+reuse detection, and load-tested, root-caused performance numbers rather than
+estimated ones.
 
-Full design in [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md).
+The frontend (Next.js) exists to make the backend demonstrable end to end -
+it is deliberately not the focus of this project.
+
+**[Architecture and design decisions →](ARCHITECTURE.md)**
+
+## Features
+
+- **URL shortening** - auto-generated base62 codes, optional custom alias,
+  optional expiry, collision retry.
+- **Guest mode** - shorten with no account, right from the landing page;
+  links expire in 24h and are swept from the database automatically.
+- **Auth** - email/password (bcrypt) and OAuth (GitHub, Google), JWT access
+  tokens held in memory only, httpOnly rotating refresh tokens with
+  family-based reuse detection.
+- **Link management** - owner-scoped CRUD, search, status and created-date
+  filters, inline destination editing, active/inactive toggle.
+- **Analytics** - clicks over time, unique visitors (IP-deduplicated per
+  day), top countries, device and browser breakdown, top referrers, all
+  served from real-time async-ingested click data.
+- **Abuse protection** - a Redis Lua sliding-window rate limiter with
+  separate anonymous/authenticated tiers per route, and a configurable
+  malicious-URL blocklist checked on every create and edit.
+- **Background maintenance** - expired guest links and stale refresh tokens
+  purged automatically by the click worker.
+- **CI/CD** - lint, typecheck, build and test on every push/PR; Docker
+  images published to GHCR on merge to `main`.
+- **Load-tested** - k6 scenarios for the redirect hot path, link creation,
+  analytics reads, and a mixed workload, with real numbers and a diagnosed
+  bottleneck, not just a pass/fail. See [Benchmarks](#benchmarks).
 
 ## Stack
 
-| Layer                      | Choice                                         |
-| -------------------------- | ---------------------------------------------- |
-| API                        | Node 22, Express 5, TypeScript                 |
-| Database                   | PostgreSQL 16 + Prisma                         |
-| Cache / queue / rate limit | Redis 7                                        |
-| Frontend                   | Next.js 14 (App Router), TailwindCSS, Recharts |
-| Validation                 | Zod (schemas shared between API and web)       |
-| Tests                      | Vitest + Supertest, k6 for load                |
-| Infra                      | Docker Compose, GitHub Actions                 |
+| Layer                      | Choice                                      |
+| -------------------------- | ------------------------------------------- |
+| API                        | Node 22, Express 5, TypeScript              |
+| Database                   | PostgreSQL 16 + Prisma 7                    |
+| Cache / queue / rate limit | Redis 7                                     |
+| Frontend                   | Next.js 16 (App Router), Tailwind, Recharts |
+| Validation                 | Zod (schemas shared between API and web)    |
+| Tests                      | Vitest + Supertest, k6 for load             |
+| Infra                      | Docker Compose, GitHub Actions              |
 
 ## Layout
 
@@ -119,7 +149,7 @@ curl -s -X POST localhost:4001/api/shorten -H 'content-type: application/json' \
 
 # http://localhost:3000: guest shortening right on the landing page, no
 # account - shorten a url, copy the result, follow it. It expires in 24h and
-# has no analytics, per guest mode's limits (spec section 2.1).
+# has no analytics, per guest mode's limits.
 
 # Register from there and land on /dashboard, reload (session survives via
 # the httpOnly refresh cookie), sign out.
@@ -196,23 +226,31 @@ process (~110-130% CPU), not Redis or Postgres (20-26% CPU each) - see
 [`benchmarks/reports/RESULTS.md`](benchmarks/reports/RESULTS.md) for the full
 notes, including why the redirect row's RPS figure is a whole-run average
 diluted by ramp-up/down while its P95 reflects the sustained-target phase.
+More on this in [ARCHITECTURE.md](ARCHITECTURE.md#performance).
 
-## Status
+## Limitations
 
-- [x] Monorepo scaffold, shared schemas, API skeleton, Docker Compose
-- [x] Prisma schema and migrations
-- [x] Shorten + redirect with Redis read-through cache
-- [x] Auth: email/password, JWT access tokens, rotating refresh tokens
-- [x] Link CRUD scoped to the owner, with cache invalidation
-- [x] OAuth (GitHub, Google)
-- [x] Async click tracking (queue + worker)
-- [x] Analytics API (time series and breakdowns)
-- [x] Dashboard charts
-- [x] Sliding-window rate limiter (Redis Lua, per-IP and per-user tiers)
-- [x] Malicious-URL blocklist on link create/edit (domain + subdomain match)
-- [x] Background cleanup: expired guest links and stale refresh tokens purged hourly
-- [x] Next.js dashboard shell: auth pages, protected layout, session restore
-- [x] Link list, search/filter/pagination, create form, per-row actions
-- [x] Per-link analytics: clicks over time, top countries, devices, browsers, referrers
-- [x] CI/CD: lint, typecheck, build and test on every push/PR; Docker images published to GHCR on merge to main
-- [x] k6 benchmarks
+Honest gaps, not oversights left unmentioned:
+
+- **Not deployed.** CI/CD builds and publishes Docker images to GHCR on every
+  merge to `main`, but no cloud host is wired up - there's nothing to link to
+  yet.
+- **Single-node throughput ceiling.** The k6 results above found the redirect
+  path's limit at one saturated CPU core on the single API process, not
+  Redis or Postgres. Horizontal scaling (multiple API replicas behind a load
+  balancer - the JWT/refresh design is already stateless, so this needs no
+  sticky sessions) is the documented next step, not implemented here.
+- **Blocklist is a static domain list**, not a live threat-intelligence feed
+  or the Google Safe Browsing API - a deliberate scope choice for a
+  self-contained project with no external API key requirement. See
+  [ARCHITECTURE.md](ARCHITECTURE.md) for the reasoning.
+- **OAuth is hand-rolled**, not NextAuth.js, to stay consistent with the
+  Express API's own JWT/refresh-token session model rather than running two
+  parallel auth systems.
+- **No account linking.** Signing up with GitHub after registering with the
+  same email via password (or vice versa) is rejected, not merged - the
+  schema gives every user exactly one provider by design.
+- **No dark mode**, no QR codes, no bulk shortening, no API keys, no
+  webhooks - out of scope for what this project sets out to demonstrate.
+- **No metrics/tracing backend.** Structured JSON logs (Pino) exist
+  throughout; there is no Prometheus/Grafana/OpenTelemetry wiring.

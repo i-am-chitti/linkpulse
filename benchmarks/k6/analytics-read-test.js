@@ -11,9 +11,9 @@ import {
   checkStatus,
 } from './lib/bench.js';
 
-// PROJECT_SPEC.md section 11.1: Analytics Read.
-// 30 VUs, 2 min flat, target >100 RPS with P95 <300ms - the one scenario here
-// that is not cache-served: every request runs a real aggregation query.
+// Analytics Read: 30 VUs, 2 min flat, target >100 RPS with P95 <300ms - the
+// one scenario here that is not cache-served: every request runs a real
+// aggregation query.
 export const options = {
   vus: 30,
   duration: '2m',

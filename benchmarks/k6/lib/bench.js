@@ -55,7 +55,7 @@ export function createLinks(token, count) {
 /**
  * One GET per code, before the timed run starts. Primes the Redis
  * read-through cache so the measured run captures cache-hit latency, not the
- * one-time miss that populates it - see PROJECT_SPEC.md section 2.2.
+ * one-time miss that populates it.
  */
 export function warmCache(codes) {
   for (const code of codes) {

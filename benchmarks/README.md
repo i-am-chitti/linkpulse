@@ -1,9 +1,10 @@
 # k6 Load Tests
 
-Four scenarios from [`PROJECT_SPEC.md` section 11.1](../docs/PROJECT_SPEC.md#11-benchmarking-plan-k6-load-testing), each fully
-self-contained: its `setup()` registers a throwaway benchmark user, seeds the
-real links (and, for the analytics scenario, real click volume) it needs, and
-returns that data to every VU. Nothing to seed by hand first.
+Four scenarios (redirect throughput, link creation, analytics reads, a mixed
+workload), each fully self-contained: its `setup()` registers a throwaway
+benchmark user, seeds the real links (and, for the analytics scenario, real
+click volume) it needs, and returns that data to every VU. Nothing to seed by
+hand first.
 
 | Script                   | Scenario            | Profile                                                  | Target                |
 | ------------------------ | ------------------- | -------------------------------------------------------- | --------------------- |

@@ -13,10 +13,10 @@ import {
   checkStatus,
 } from './lib/bench.js';
 
-// PROJECT_SPEC.md section 11.1: Mixed Workload.
-// 200 VUs, 5 min, 80% redirect / 15% create / 5% analytics read. Target is
-// "stable under load", not a throughput number - so the only hard threshold
-// is a bounded error rate, and RPS/latency are reported, not gated.
+// Mixed Workload: 200 VUs, 5 min, 80% redirect / 15% create / 5% analytics
+// read. Target is "stable under load", not a throughput number - so the
+// only hard threshold is a bounded error rate, and RPS/latency are
+// reported, not gated.
 export const options = {
   vus: 200,
   duration: '5m',

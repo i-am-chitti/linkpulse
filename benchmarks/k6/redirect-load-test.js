@@ -9,8 +9,7 @@ import {
   checkStatus,
 } from './lib/bench.js';
 
-// PROJECT_SPEC.md section 11.1: Redirect Throughput, target >2,500 RPS with
-// P95 <50ms.
+// Redirect Throughput, target >2,500 RPS with P95 <50ms.
 //
 // ramping-arrival-rate, not a VU-based executor: it asks for the request
 // rate directly and lets k6 allocate whatever VUs sustaining it needs. A

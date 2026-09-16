@@ -20,7 +20,8 @@ export interface RateLimitOptions {
 }
 
 /**
- * Applies a sliding-window limit per PROJECT_SPEC.md section 2.3.
+ * Applies a sliding-window rate limit, tiered by whether the caller is
+ * authenticated.
  *
  * Must run after optionalAuth/requireAuth on any route that wants the user
  * tier: the actor on req is what tells an authenticated caller apart from an

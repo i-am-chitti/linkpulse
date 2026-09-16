@@ -1,5 +1,5 @@
-// Confirms each real route is wired to the bucket and tier PROJECT_SPEC.md
-// section 2.3 calls for. RATE_LIMIT_* is set very high in vitest.config.ts so
+// Confirms each real route is wired to its intended rate-limit bucket and
+// tier. RATE_LIMIT_* is set very high in vitest.config.ts so
 // the rest of the suite (which shares one IP across dozens of files) is
 // unaffected; every test here uses its own X-Forwarded-For or fresh user so
 // it is unaffected by that too. The sliding-window algorithm itself and the
