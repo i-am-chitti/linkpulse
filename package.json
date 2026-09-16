@@ -19,10 +19,10 @@
     "format:check": "prettier --check .",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "verify:reset": "node scripts/verify.mjs reset",
-    "verify:clean": "node scripts/verify.mjs clean",
-    "verify:down": "node scripts/verify.mjs down",
-    "verify:run": "node scripts/verify.mjs run"
+    "e2e:reset": "node scripts/e2e.mjs reset",
+    "e2e:clean": "node scripts/e2e.mjs clean",
+    "e2e:down": "node scripts/e2e.mjs down",
+    "e2e:run": "node scripts/e2e.mjs run"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

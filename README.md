@@ -154,23 +154,28 @@ healthy process during a brief Redis blip. `/health/ready` checks dependencies
 | `pnpm lint`      | ESLint across the workspace            |
 | `pnpm format`    | Prettier write                         |
 
-## Live verification
+## E2E / live verification
 
-`docker-compose.verify.yml` is a second, fully isolated stack - its own
+`docker-compose.e2e.yml` is a second, fully isolated stack - its own
 Postgres, Redis, and containers, on ports 3001/4002/5434/6382 - for
 browser-driven checks (Playwright, manual clicking around) that need a real
 running app but must never touch the dev stack's database. It costs nothing
 to reset and nothing to wipe, on purpose:
 
 ```bash
-pnpm verify:reset   # fresh containers, fresh database, migrations applied
-pnpm verify:clean   # truncate all data, keep the stack running
-pnpm verify:down    # stop everything and drop the volume
+pnpm e2e:reset             # fresh containers, fresh database, migrations applied
+pnpm e2e:clean             # truncate all data, keep the stack running
+pnpm e2e:down              # stop everything and drop the volume
+pnpm e2e:run -- <command>  # reset, run <command> against it, always tear down after
 ```
 
 Needs no `.env` and no setup - `JWT_SECRET` is a fixed dummy value valid only
-inside this stack. `docker compose up -d` (the dev stack) and this can both
-be running at once.
+inside this stack. The dev stack and this can both be running at once:
+
+```bash
+pnpm docker:up    # dev stack up (docker compose up -d)
+pnpm docker:down  # dev stack down, data preserved (no -v - the named volume survives)
+```
 
 ## Benchmarks
 
