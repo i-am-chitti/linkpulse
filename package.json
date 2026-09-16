@@ -17,9 +17,12 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
     "verify:reset": "node scripts/verify.mjs reset",
     "verify:clean": "node scripts/verify.mjs clean",
-    "verify:down": "node scripts/verify.mjs down"
+    "verify:down": "node scripts/verify.mjs down",
+    "verify:run": "node scripts/verify.mjs run"
   },
   "devDependencies": {
     "@types/node": "22.20.1",
