@@ -14,21 +14,13 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 
 /**
- * The form's own schema, not createLinkSchema directly: emptyToUndefined
- * normalizes each optional field's blank "" before @linkpulse/shared's own
- * rules run, so a blank field reads as "not provided" rather than "provided
- * and invalid". (.pipe() looks like the more obvious tool here, but its
- * generic input-type check does not line up with z.coerce.date()'s
- * permissive `unknown` input in this Zod version; preprocess's untyped
- * callback sidesteps that.)
+ * Own schema, not createLinkSchema directly: emptyToUndefined normalizes a
+ * blank optional field to "not provided" before @linkpulse/shared's rules
+ * run, so an untouched field doesn't read as "provided and invalid".
  *
- * The rules themselves - what makes a URL, an alias, or an expiry valid -
- * are still the exact ones the API enforces, imported from @linkpulse/shared.
- * expiresAt in particular has to actually become a Date here, in the
- * browser: an <input type="datetime-local"> value carries no timezone
- * offset, so it must be parsed against the browser's local time zone before
- * it is serialized - parsing it again on the server would use the server's
- * time zone instead and silently shift the expiry.
+ * expiresAt must become a Date here, in the browser: a datetime-local input
+ * has no timezone offset, so it has to parse against the browser's own time
+ * zone before serializing - doing that on the server would use the wrong zone.
  */
 const formSchema = z.object({
   url: destinationUrlSchema,

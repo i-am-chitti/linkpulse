@@ -12,14 +12,12 @@ import {
 // PROJECT_SPEC.md section 11.1: Redirect Throughput, target >2,500 RPS with
 // P95 <50ms.
 //
-// A constant/ramping-VUs executor (the spec's own sample script, and this
-// file's first version) conflates "how many clients are connected" with "how
-// many requests per second arrive" - a naive closed loop of 500 VUs hammering
-// with no pacing pushed well past 2,500 RPS but also self-induced queueing
-// (P95 rose to ~170ms), because raising VUs is not the same lever as raising
-// request rate. ramping-arrival-rate asks for the rate directly and lets k6
-// allocate whatever VUs it needs to sustain it, which is what "prove the
-// hot path sustains 2,500 RPS at P95 <50ms" actually means to measure.
+// ramping-arrival-rate, not a VU-based executor: it asks for the request
+// rate directly and lets k6 allocate whatever VUs sustaining it needs. A
+// constant/ramping-VUs executor conflates "clients connected" with "requests
+// per second" - raising VU count is not the same lever as raising rate, and
+// self-induced queueing from an oversized VU pool would misreport the hot
+// path's own latency.
 export const options = {
   scenarios: {
     redirect_throughput: {

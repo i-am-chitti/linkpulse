@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { formSchema } from '../app/(auth)/register/page';
 
-// Regression test for the bug caught live: an untouched Name field submits
-// "" to a schema where name is optional but, once provided, must be >=1
-// character - so a blank optional field failed the same check as "provided
-// and too short", when the field is entirely optional.
+// An untouched Name field submits "" to a schema where name is optional but,
+// once provided, must be >=1 character after trimming.
 describe('register form schema', () => {
   it('accepts a blank name as not provided', () => {
     const result = formSchema.safeParse({

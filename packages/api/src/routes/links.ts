@@ -11,14 +11,10 @@ export const linksRouter: Router = Router();
 /**
  * Every route here is owner-scoped. Authentication and rate limiting are
  * applied once, in app.ts, before either this router or analyticsRouter -
- * not here per router.
- *
- * That is not just tidiness: a router-level `.use(path, ...)` matches any
- * request whose path starts with that prefix, even one this router has no
- * terminal route for. Guarding '/api/links' identically in both linksRouter
- * and analyticsRouter meant a request to an analytics-only path (which falls
- * through linksRouter's unmatched routes before reaching analyticsRouter)
- * paid the rate limit twice - silently halving the real per-user quota.
+ * not here per router: a router-level `.use(path, ...)` matches any request
+ * whose path starts with that prefix, even one this router has no terminal
+ * route for, so guarding '/api/links' in both routers would charge the rate
+ * limit twice for one request.
  */
 
 /**

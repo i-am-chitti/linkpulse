@@ -12,10 +12,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   ref,
 ) {
   // Falls back to the field's `name` (always present via react-hook-form's
-  // `register()` spread) so the label stays programmatically associated with
-  // the input even when no id is passed explicitly. Without this, the label
-  // was visually next to the input but not linked to it - invisible to a
-  // screen reader, and to anything else that finds inputs by their label.
+  // `register()` spread) so the label stays programmatically linked to the
+  // input even with no explicit id - otherwise a screen reader sees them as
+  // unrelated, merely adjacent, elements.
   const inputId = id ?? props.name;
 
   return (

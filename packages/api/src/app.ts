@@ -61,14 +61,11 @@ export function createApp(): Express {
 
   /**
    * Auth and the shared per-user rate limit for every /api/links* route,
-   * applied once here rather than inside linksRouter and analyticsRouter.
-   *
-   * Both routers own paths under this prefix, and Express matches a
-   * router-level `.use('/api/links', ...)` against any request whose path
-   * starts with it - including one only the *other* router has a terminal
-   * route for. Guarding the prefix in both places meant an analytics request
-   * paid the rate limit twice on its way through. One mount here, ahead of
-   * both routers, means it is paid exactly once no matter which router ends
+   * applied once here rather than inside linksRouter and analyticsRouter:
+   * both routers own paths under this prefix, and a router-level
+   * `.use('/api/links', ...)` matches any request whose path starts with it,
+   * including one only the *other* router has a terminal route for. One
+   * mount here means it is paid exactly once regardless of which router ends
    * up serving the request.
    */
   app.use(

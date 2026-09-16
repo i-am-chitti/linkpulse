@@ -10,8 +10,7 @@ export const analyticsRouter: Router = Router();
 /**
  * Authentication and rate limiting are applied once for the whole '/api/links'
  * prefix in app.ts, ahead of this router and linksRouter - see the comment in
- * links.ts for why duplicating that guard in both routers double-charged the
- * rate limit on every analytics request.
+ * links.ts for why.
  */
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

@@ -37,12 +37,8 @@ export function ClicksOverTimeChart({ data }: { data: ClicksByDay[] }) {
           axisLine={{ stroke: CHART_INK.axis }}
           tickLine={false}
           minTickGap={24}
-          // Without this, Recharts' spacing math can drop the very last
-          // label (not enough room between it and the container edge) while
-          // still plotting its point - which reads as the last day's dot
-          // floating unlabeled past the axis. preserveStartEnd always keeps
-          // the first and last ticks; the right margin above gives the last
-          // one room to actually fit.
+          // Recharts can otherwise drop the last label for space while still
+          // plotting its point; preserveStartEnd always keeps first/last ticks.
           interval="preserveStartEnd"
         />
         <YAxis

@@ -75,8 +75,7 @@ function DeleteButton({ onConfirm, isPending }: { onConfirm: () => void; isPendi
       onClick={handleClick}
       isLoading={isPending}
       // Icon-only when unarmed, so it needs its own label rather than
-      // relying on visible text - the same gap the Input component had
-      // until its label wasn't linked to the field it described.
+      // relying on visible text.
       aria-label={armed ? 'Confirm delete' : 'Delete link'}
       className="!px-2 !py-1 text-xs"
     >

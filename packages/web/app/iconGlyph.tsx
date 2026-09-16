@@ -5,12 +5,8 @@ import type { ReactElement } from 'react';
  * its own route with its own default export, but the glyph itself is one
  * design scaled to two sizes.
  *
- * A letterform, not a literal chain-link glyph: an early version drew two
- * crossed rounded bars meant to echo lucide's Link2, but at favicon scale it
- * read as an "X" (arguably "cancel") rather than a link. A bold single
- * letter is the standard fix real products reach for here (Linear, Vercel,
- * Loom) - it survives being viewed at 16px, which a literal icon usually
- * does not.
+ * A letterform, not a literal chain-link glyph: a bold single letter reads
+ * correctly at favicon scale (down to 16px); a literal icon usually does not.
  */
 export function renderIconGlyph(canvasSize: number): ReactElement {
   return (

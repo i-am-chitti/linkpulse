@@ -95,10 +95,9 @@ describe('GET /:shortCode - redirect tier', () => {
 
     const res = await request(app).get('/rlk1').set('X-Forwarded-For', freshIp());
 
-    // Asserted, not just the header: a rate-limit test that never checks the
-    // redirect actually happened would not have caught this file's own
-    // "rlk1" starting life as "r1" - two characters, one short of
-    // SHORT_CODE_PATTERN's minimum, 404ing every time regardless of headers.
+    // Status asserted too, not just the header: a header can be present on a
+    // 404 as easily as a 302, so checking only the header would not confirm
+    // the redirect actually happened.
     expect(res.status).toBe(302);
     expect(res.headers['x-ratelimit-limit']).toBe(String(env.RATE_LIMIT_ANON_REDIRECT_PER_MINUTE));
   });

@@ -34,11 +34,7 @@ USER node
 EXPOSE 3000
 ENV PORT=3000
 # The standalone server binds to `process.env.HOSTNAME || '0.0.0.0'`, and
-# Docker sets HOSTNAME to the container id by default - silently overriding
-# Next's own sane default and leaving the server unreachable on loopback
-# inside its own container. Host access still worked by coincidence (Docker's
-# port-forward happened to target the same address HOSTNAME resolved to via
-# /etc/hosts), but the healthcheck below uses 127.0.0.1 and would report the
-# container unhealthy regardless.
+# Docker sets HOSTNAME to the container id by default, which would leave the
+# server unreachable on the loopback address the healthcheck below uses.
 ENV HOSTNAME=0.0.0.0
 CMD ["node", "packages/web/server.js"]

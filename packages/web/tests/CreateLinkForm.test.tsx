@@ -61,9 +61,8 @@ describe('CreateLinkForm', () => {
   });
 
   it('treats a blank optional alias as not provided, not as an invalid one', async () => {
-    // The regression this guards: an untouched optional field is "", and
-    // customAliasSchema's min-length check would reject "" the same way it
-    // rejects "ab" unless the empty string is normalised to undefined first.
+    // An untouched optional field is "", and customAliasSchema's min-length
+    // check rejects "" the same way it rejects "ab" unless normalized first.
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       jsonResponse(201, {
         id: '1',
