@@ -1,14 +1,6 @@
-# Isolated stack for live/browser-driven checks (Playwright etc.), entirely
-# separate from docker-compose.yml's dev stack: its own Postgres, its own
-# Redis, its own containers, its own project name (`name:` below), on
-# different host ports so both stacks can run at once.
-#
-# The reason this file exists: cleaning up after a live check used to mean
-# truncating the dev database's tables directly, which is exactly as
-# dangerous as it sounds the moment that database also holds real data - it
-# did, once, and took a real account with it. This stack has nothing in it
-# but what a run put there, so `pnpm e2e:clean` can wipe it with no way to
-# reach anything real.
+# Isolated stack for live/browser-driven checks (Playwright etc.): its own
+# Postgres, Redis, and containers, entirely separate from docker-compose.yml's
+# dev stack, on different host ports so both can run at once.
 #
 #   pnpm e2e:reset   # fresh containers, fresh database, migrations applied
 #   pnpm e2e:clean   # truncate all data, keep the stack running
@@ -61,8 +53,7 @@ services:
       LOG_LEVEL: info
       DATABASE_URL: postgresql://linkpulse:linkpulse@postgres-e2e:5432/linkpulse
       REDIS_URL: redis://redis-e2e:6379
-      # Fixed, disposable, and only ever valid inside this isolated stack -
-      # nothing this signs is meaningful anywhere else.
+      # Fixed dummy value, only valid inside this stack.
       JWT_SECRET: linkpulse-e2e-stack-dummy-secret-never-used-for-anything-real
       APP_BASE_URL: http://localhost:4002
       CORS_ORIGINS: http://localhost:3001

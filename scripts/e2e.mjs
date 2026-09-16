@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// Manages the isolated e2e stack (docker-compose.e2e.yml), used for
-// live/browser-driven checks against a running app instead of the dev
-// stack - see that file's header for why this exists at all.
+// Manages the isolated e2e stack (docker-compose.e2e.yml).
 //
 //   node scripts/e2e.mjs reset               (or: pnpm e2e:reset)
 //   node scripts/e2e.mjs clean               (or: pnpm e2e:clean)
@@ -68,12 +66,7 @@ switch (command) {
   /**
    * One command for the whole lifecycle: reset, run whatever was passed
    * (typically a Playwright script), then always tear down - success or
-   * failure, and even if the reset itself fails partway through (a real
-   * case, not hypothetical: Docker ran out of disk space mid-reset once
-   * while building this and left an orphaned container behind because nothing
-   * was there to catch it). The `finally` covers the whole attempt, not just
-   * the payload, so nothing manual has to be remembered afterward regardless
-   * of where it broke.
+   * failure, including a failure during reset itself.
    */
   case 'run': {
     // `pnpm e2e:run -- node foo.mjs` forwards the literal `--` into this
