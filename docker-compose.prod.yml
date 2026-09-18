@@ -1,0 +1,121 @@
+# Production stack: prebuilt images, no build context, no postgres service
+# (external managed Postgres - see .github/workflows/deploy.yml). Deployed
+# and redeployed by the "Deploy" GitHub Actions workflow (manual trigger),
+# which assembles .env.production from repo secrets/variables and copies
+# this file and Caddyfile to whatever host DEPLOY_HOST points at.
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: linkpulse-redis
+    restart: unless-stopped
+    # Cache/queue/rate-limit state only, nothing durable - fine to lose on a
+    # host swap.
+    command:
+      - redis-server
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - 'no'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: ghcr.io/i-am-chitti/linkpulse-api:latest
+    container_name: linkpulse-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      LOG_LEVEL: info
+      DATABASE_URL: '${DATABASE_URL:?set DATABASE_URL in .env.production}'
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: '${JWT_SECRET:?set JWT_SECRET in .env.production}'
+      APP_BASE_URL: '${APP_BASE_URL:?set APP_BASE_URL in .env.production}'
+      CORS_ORIGINS: '${CORS_ORIGINS:?set CORS_ORIGINS in .env.production}'
+      WEB_ORIGIN: '${WEB_ORIGIN:?set WEB_ORIGIN in .env.production}'
+      GITHUB_CLIENT_ID: '${GITHUB_CLIENT_ID:-}'
+      GITHUB_CLIENT_SECRET: '${GITHUB_CLIENT_SECRET:-}'
+      GOOGLE_CLIENT_ID: '${GOOGLE_CLIENT_ID:-}'
+      GOOGLE_CLIENT_SECRET: '${GOOGLE_CLIENT_SECRET:-}'
+      URL_BLOCKLIST: '${URL_BLOCKLIST:-malware.testing.google.test,testsafebrowsing.appspot.com}'
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  worker:
+    # Same image as api, different entry point - see docker-compose.yml.
+    image: ghcr.io/i-am-chitti/linkpulse-api:latest
+    container_name: linkpulse-worker
+    restart: unless-stopped
+    command: ['node', 'packages/api/dist/worker.js']
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+      DATABASE_URL: '${DATABASE_URL:?set DATABASE_URL in .env.production}'
+      REDIS_URL: redis://redis:6379
+      APP_BASE_URL: '${APP_BASE_URL:?set APP_BASE_URL in .env.production}'
+      JWT_SECRET: '${JWT_SECRET:?set JWT_SECRET in .env.production}'
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  web:
+    # Built and pushed by the "Deploy" workflow, not ci.yml's :latest -
+    # NEXT_PUBLIC_API_URL must be baked in at build time, and ci.yml never sets it.
+    image: ghcr.io/i-am-chitti/linkpulse-web:prod
+    container_name: linkpulse-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: linkpulse-caddy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      # Empty: Caddy serves plain HTTP on :80 (see Caddyfile). Set once a
+      # domain exists - automatic HTTPS, no other change.
+      DOMAIN: '${DOMAIN:-}'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+
+volumes:
+  caddy-data:
+  caddy-config:

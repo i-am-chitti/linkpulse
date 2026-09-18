@@ -1,0 +1,18 @@
+# One address serves everything: web app, API, and short-link redirects.
+# Unset -> plain HTTP on :80. Set to a real hostname -> automatic HTTPS.
+{$DOMAIN:":80"}
+
+encode gzip
+
+# Real app routes - matches RESERVED_SHORT_CODES (packages/shared/src/constants.ts).
+@app path / /login /register /oauth/* /dashboard /dashboard/* /_next/* /favicon.ico /icon /apple-icon /robots.txt
+
+handle @app {
+	reverse_proxy web:3000
+}
+
+# Everything else - /api/*, /health*, and every short code - is the api's:
+# REST endpoints, health checks, and the GET /:shortCode redirect handler.
+handle {
+	reverse_proxy api:4000
+}

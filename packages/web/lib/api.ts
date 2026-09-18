@@ -43,12 +43,15 @@ interface RequestOptions {
   skipAuthRetry?: boolean;
 }
 
+// String concatenation, not `new URL(path, base)`: that requires an absolute
+// base, but API_BASE_URL is empty in a same-origin deployment (lib/env.ts).
 function buildUrl(path: string, params?: RequestOptions['params']): string {
-  const url = new URL(path, API_BASE_URL);
+  const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params ?? {})) {
-    if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
+    if (value !== undefined && value !== null) query.set(key, String(value));
   }
-  return url.toString();
+  const queryString = query.toString();
+  return `${API_BASE_URL}${path}${queryString ? `?${queryString}` : ''}`;
 }
 
 let refreshInFlight: Promise<boolean> | null = null;
