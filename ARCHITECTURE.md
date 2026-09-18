@@ -137,6 +137,35 @@ original spec called for. Kept as bar charts instead - bar length is easier
 to compare precisely than pie-slice angle, especially for an open-ended
 "top N + Other" set a pie chart handles poorly.
 
+### Deployment: one VM behind Caddy, not a PaaS
+
+Live at [linkpulse.thedeepak.dev](https://linkpulse.thedeepak.dev): a single
+AWS EC2 instance running the same `docker compose` shape as local dev, minus
+Postgres (external Neon) and with Caddy added as a reverse proxy for
+automatic HTTPS. `NEXT_PUBLIC_API_URL` is baked in empty at build time, so
+the browser calls its own origin for everything and Caddy routes `/api/*`,
+`/health*`, and short codes to the API container, everything else to the
+Next.js app - one address does the whole job, and the domain can change
+with no rebuild. Deploys are a manually-triggered GitHub Actions workflow
+(`.github/workflows/deploy.yml`): it builds and pushes the web image, runs
+`prisma migrate deploy` straight against Neon, then SSHes in and restarts
+the stack - reading `DATABASE_URL`, `JWT_SECRET` and a dedicated deploy-only
+SSH key from GitHub Secrets, never from a file on a laptop.
+
+**Alternative rejected: a PaaS (Render, Fly.io).** Faster to click through
+initially, but a PaaS's own deploy config doesn't carry over to a different
+provider - moving from Render to a DigitalOcean droplet later would mean
+building this same VM-plus-Compose recipe anyway. Building it once, now,
+means the next move is copying three files to a new host and re-running one
+workflow, not re-architecting the deployment.
+
+**Alternative rejected: RDS instead of Neon for Postgres.** Reachable from
+outside AWS if made public, so not strictly a lock-in - but it stays an AWS
+resource billed from the same credit pool as the compute it's meant to be
+independent of, and would still need a real migration the day AWS itself is
+dropped. Neon never has to move, regardless of which cloud is running the
+containers on any given day.
+
 ## Testing strategy
 
 - **Unit tests** (Vitest) for pure logic: schema validation, the rate
@@ -216,13 +245,12 @@ Roughly in the order a real deployment would need them, not necessarily the
 order they'd be fun to build:
 
 1. **Horizontal API scaling** behind a load balancer, since the k6 results
-   found the single-process ceiling directly.
-2. **A real deployment target** - CI already builds and publishes images to
-   GHCR; nothing runs them yet.
-3. **Metrics and tracing** - structured logs exist throughout (Pino); no
+   found the single-process ceiling directly - the current deployment is
+   one instance.
+2. **Metrics and tracing** - structured logs exist throughout (Pino); no
    Prometheus/Grafana/OpenTelemetry wiring yet.
-4. **A real threat-intelligence feed** behind `URL_BLOCKLIST`, replacing the
+3. **A real threat-intelligence feed** behind `URL_BLOCKLIST`, replacing the
    static list.
-5. **Account linking** for a user who wants to add a second sign-in method
+4. **Account linking** for a user who wants to add a second sign-in method
    to an existing account - deliberately out of scope now, since doing it
    safely needs its own confirmation flow, not a quick addition.

@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/i-am-chitti/linkpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/i-am-chitti/linkpulse/actions/workflows/ci.yml)
 
+**Live: [linkpulse.thedeepak.dev](https://linkpulse.thedeepak.dev)** · [Screenshots →](SCREENSHOTS.md)
+
 A production-shaped URL shortener with real-time click analytics, built to
 demonstrate backend engineering: a Redis read-through cache on the redirect
 hot path, an async click pipeline that never blocks a response, a
@@ -228,13 +230,18 @@ notes, including why the redirect row's RPS figure is a whole-run average
 diluted by ramp-up/down while its P95 reflects the sustained-target phase.
 More on this in [ARCHITECTURE.md](ARCHITECTURE.md#performance).
 
+## Deployment
+
+Live on a single AWS EC2 instance behind Caddy (automatic HTTPS), with an
+external Neon Postgres so the database never has to move if the compute
+host does. Deployed by a manually-triggered GitHub Actions workflow
+(`.github/workflows/deploy.yml`) that reads secrets from GitHub, not a
+local file. Full reasoning: [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Limitations
 
 Honest gaps, not oversights left unmentioned:
 
-- **Not deployed.** CI/CD builds and publishes Docker images to GHCR on every
-  merge to `main`, but no cloud host is wired up - there's nothing to link to
-  yet.
 - **Single-node throughput ceiling.** The k6 results above found the redirect
   path's limit at one saturated CPU core on the single API process, not
   Redis or Postgres. Horizontal scaling (multiple API replicas behind a load
