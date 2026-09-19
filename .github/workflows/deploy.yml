@@ -68,8 +68,8 @@ jobs:
           APP_BASE_URL=${{ vars.APP_BASE_URL }}
           CORS_ORIGINS=${{ vars.CORS_ORIGINS }}
           WEB_ORIGIN=${{ vars.WEB_ORIGIN }}
-          GITHUB_CLIENT_ID=${{ vars.GITHUB_CLIENT_ID }}
-          GITHUB_CLIENT_SECRET=${{ secrets.GITHUB_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID=${{ vars.GH_OAUTH_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET=${{ secrets.GH_OAUTH_CLIENT_SECRET }}
           GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
           EOF
