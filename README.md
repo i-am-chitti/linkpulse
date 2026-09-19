@@ -14,7 +14,8 @@ estimated ones.
 The frontend (Next.js) exists to make the backend demonstrable end to end -
 it is deliberately not the focus of this project.
 
-**[Architecture and design decisions →](ARCHITECTURE.md)**
+**[Architecture and design decisions →](ARCHITECTURE.md)** ·
+**[Development guide →](DEVELOPMENT.md)** (setup, scripts, E2E)
 
 ## Features
 
@@ -36,7 +37,8 @@ it is deliberately not the focus of this project.
 - **Background maintenance** - expired guest links and stale refresh tokens
   purged automatically by the click worker.
 - **CI/CD** - lint, typecheck, build and test on every push/PR; Docker
-  images published to GHCR on merge to `main`.
+  images published to GHCR on merge to `main`; deploy via a manually
+  triggered GitHub Actions workflow.
 - **Load-tested** - k6 scenarios for the redirect hot path, link creation,
   analytics reads, and a mixed workload, with real numbers and a diagnosed
   bottleneck, not just a pass/fail. See [Benchmarks](#benchmarks).
@@ -45,7 +47,7 @@ it is deliberately not the focus of this project.
 
 | Layer                      | Choice                                      |
 | -------------------------- | ------------------------------------------- |
-| API                        | Node 22, Express 5, TypeScript              |
+| API                        | Node 24, Express 5, TypeScript              |
 | Database                   | PostgreSQL 16 + Prisma 7                    |
 | Cache / queue / rate limit | Redis 7                                     |
 | Frontend                   | Next.js 16 (App Router), Tailwind, Recharts |
@@ -64,150 +66,28 @@ packages/web      Next.js dashboard: auth pages, protected layout
 benchmarks/k6     load tests: redirect, create, analytics, mixed workload
 ```
 
-Two processes run from the `api` package: `src/index.ts` serves HTTP, and
-`src/worker.ts` drains the click queue. They are separate because the worker
-loads a ~110 MB in-memory geo database that the redirect path never reads -
-measured live, the api container holds ~50 MB against the worker's ~170 MB.
+Two processes run from `api`: `src/index.ts` serves HTTP, `src/worker.ts`
+drains the click queue - see [ARCHITECTURE.md](ARCHITECTURE.md#async-click-processing-a-separate-worker-process)
+for why they're split.
 
-## Getting started
-
-Requires Node >= 22, pnpm >= 10 and Docker.
+## Quick start
 
 ```bash
 pnpm install
-cp .env.example .env
-
-# Infra only; run the API on the host for a fast reload loop.
-docker compose up -d postgres redis
-
-pnpm --filter @linkpulse/api db:migrate      # apply migrations
-pnpm --filter @linkpulse/api test:db:setup   # create + migrate the test database
-
-cp packages/web/.env.example packages/web/.env.local   # once
-pnpm dev
+cp .env.example .env        # generate JWT_SECRET: openssl rand -hex 32
+pnpm docker:up               # full stack, including the API
 ```
 
-Host ports default to 4001 (api), 5433 (postgres) and 6381 (redis) so the stack
-coexists with other local services; override `API_PORT`, `POSTGRES_PORT` and
-`REDIS_PORT` in `.env` if those collide too.
+Full setup (fast host reload loop, test DB, all the curl-based verification
+commands) and the day-to-day scripts reference: **[DEVELOPMENT.md](DEVELOPMENT.md)**.
 
-`JWT_SECRET` has no default and compose refuses to start without it. Generate
-one with `openssl rand -hex 32`.
+## Deployment
 
-Tests use Postgres database `linkpulse_test` and **Redis logical database 1**,
-so `pnpm test` is safe to run while the dev stack is up - otherwise the running
-worker would drain `clicks:queue` out from under the click tests.
-
-Or bring up the whole stack, API included:
-
-```bash
-docker compose up -d
-```
-
-### Verify
-
-```bash
-curl -s localhost:4001/health
-# {"status":"ok","uptime":3}
-
-curl -s localhost:4001/health/ready
-# {"status":"ready","checks":{"database":true,"redis":true}}
-
-# Shorten a URL, then follow it.
-CODE=$(curl -s -X POST localhost:4001/api/shorten \
-  -H 'content-type: application/json' \
-  -d '{"url":"https://example.com/long/path"}' | jq -r .shortCode)
-
-curl -sI localhost:4001/$CODE | head -3
-# HTTP/1.1 302 Found
-# Cache-Control: no-store, no-cache, must-revalidate
-# Location: https://example.com/long/path
-
-# Clicks are queued off the hot path, then drained by the worker.
-docker compose exec redis redis-cli LLEN clicks:queue
-docker compose exec postgres psql -U linkpulse -d linkpulse \
-  -c 'SELECT device_type, browser, country, referrer, count(*)
-        FROM clicks GROUP BY 1,2,3,4 ORDER BY 5 DESC;'
-
-# The same worker also sweeps expired guest links and stale refresh tokens,
-# hourly (CLEANUP_INTERVAL_MINUTES) - on startup too, so restarting it forces
-# an immediate sweep for a demo. Watch it happen:
-docker compose restart worker && docker compose logs worker --tail 5
-# {"...","purgedLinks":N,"purgedTokens":N,"msg":"cleanup sweep complete"}
-# (only logged when something was actually purged)
-
-# 11 guest-shorten requests from one IP trips the 10/min anonymous limit.
-for i in $(seq 1 11); do
-  curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:4001/api/shorten \
-    -H 'content-type: application/json' -d '{"url":"https://example.com"}'
-done
-# 201 x10, then 429 with X-RateLimit-Remaining: 0 and Retry-After: <seconds>
-
-# A blocklisted URL is refused on create and on edit (URL_BLOCKLIST in .env;
-# defaults to Google's own Safe Browsing test domains).
-curl -s -X POST localhost:4001/api/shorten -H 'content-type: application/json' \
-  -d '{"url":"https://testsafebrowsing.appspot.com/s/malware.html"}'
-# {"error":{"code":"BAD_REQUEST","message":"This URL is on the blocklist..."}}
-
-# http://localhost:3000: guest shortening right on the landing page, no
-# account - shorten a url, copy the result, follow it. It expires in 24h and
-# has no analytics, per guest mode's limits.
-
-# Register from there and land on /dashboard, reload (session survives via
-# the httpOnly refresh cookie), sign out.
-
-# On /dashboard: shorten a URL (optionally with a custom alias or expiry),
-# search and filter the list by status or created-date range, edit a link's
-# destination inline (pencil icon), toggle a link active/inactive, copy its
-# short URL, delete it (requires a second confirming click).
-
-# Click a link's analytics icon for clicks-over-time, top countries, device
-# and browser breakdowns, and top referrers, over 7/30/90-day presets.
-
-# "Continue with GitHub"/"Google" on /login or /register - real OAuth
-# needs GITHUB_CLIENT_ID/SECRET or GOOGLE_CLIENT_ID/SECRET in .env (see
-# .env.example for where to register an app); with neither set, the button
-# still round-trips through the API and lands back on a real error page
-# rather than a dead link.
-```
-
-`/health` is dependency-free (liveness) so an orchestrator will not restart a
-healthy process during a brief Redis blip. `/health/ready` checks dependencies
-(readiness) so a load balancer can drain an instance that cannot serve traffic.
-
-## Scripts
-
-| Command          | Effect                                 |
-| ---------------- | -------------------------------------- |
-| `pnpm dev`       | Run every package in watch mode        |
-| `pnpm build`     | Build all packages in dependency order |
-| `pnpm test`      | Run all test suites                    |
-| `pnpm typecheck` | Type-check without emitting            |
-| `pnpm lint`      | ESLint across the workspace            |
-| `pnpm format`    | Prettier write                         |
-
-## E2E / live verification
-
-`docker-compose.e2e.yml` is a second, fully isolated stack - its own
-Postgres, Redis, and containers, on ports 3001/4002/5434/6382 - for
-browser-driven checks (Playwright, manual clicking around) that need a real
-running app but must never touch the dev stack's database. It costs nothing
-to reset and nothing to wipe, on purpose:
-
-```bash
-pnpm e2e:reset             # fresh containers, fresh database, migrations applied
-pnpm e2e:clean             # truncate all data, keep the stack running
-pnpm e2e:down              # stop everything and drop the volume
-pnpm e2e:run -- <command>  # reset, run <command> against it, always tear down after
-```
-
-Needs no `.env` and no setup - `JWT_SECRET` is a fixed dummy value valid only
-inside this stack. The dev stack and this can both be running at once:
-
-```bash
-pnpm docker:up    # dev stack up (docker compose up -d)
-pnpm docker:down  # dev stack down, data preserved (no -v - the named volume survives)
-```
+Live on a single AWS EC2 instance behind Caddy (automatic HTTPS), with an
+external Neon Postgres so the database never has to move if the compute
+host does. Deployed by a manually-triggered GitHub Actions workflow
+(`.github/workflows/deploy.yml`) that reads secrets from GitHub, not a
+local file. Full reasoning: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Benchmarks
 
@@ -226,17 +106,7 @@ Diagnosed with `docker stats` while pushing past the redirect target: the
 ceiling above ~2,500 RPS is one saturated CPU core on the single Node.js api
 process (~110-130% CPU), not Redis or Postgres (20-26% CPU each) - see
 [`benchmarks/reports/RESULTS.md`](benchmarks/reports/RESULTS.md) for the full
-notes, including why the redirect row's RPS figure is a whole-run average
-diluted by ramp-up/down while its P95 reflects the sustained-target phase.
-More on this in [ARCHITECTURE.md](ARCHITECTURE.md#performance).
-
-## Deployment
-
-Live on a single AWS EC2 instance behind Caddy (automatic HTTPS), with an
-external Neon Postgres so the database never has to move if the compute
-host does. Deployed by a manually-triggered GitHub Actions workflow
-(`.github/workflows/deploy.yml`) that reads secrets from GitHub, not a
-local file. Full reasoning: [ARCHITECTURE.md](ARCHITECTURE.md).
+notes. More on this in [ARCHITECTURE.md](ARCHITECTURE.md#performance).
 
 ## Limitations
 
