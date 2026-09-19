@@ -2,7 +2,7 @@
 
 # Workspace-aware multi-stage build. The dependency layer is keyed only on the
 # manifests, so editing source does not re-run `pnpm install`.
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 RUN corepack enable
 WORKDIR /repo
 

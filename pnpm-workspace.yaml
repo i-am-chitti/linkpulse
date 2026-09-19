@@ -21,3 +21,4 @@ minimumReleaseAgeExclude:
   - react-dom@19.3.0
   - react@19.3.0
   - scheduler@0.28.0
+  - '@types/node@24.13.6'
