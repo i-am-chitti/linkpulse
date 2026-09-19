@@ -34,10 +34,11 @@ interface TotalsRow {
 /**
  * Total and distinct-visitor counts for the window.
  *
- * COUNT(DISTINCT ip_address) skips nulls, so periods older than the IP
- * retention window report fewer unique visitors than they truly had. That is
- * the accepted cost of not keeping addresses indefinitely, and it is why the
- * two numbers are reported separately rather than as a ratio.
+ * COUNT(DISTINCT ip_address) skips nulls. No retention job nulls old
+ * addresses out yet (see ARCHITECTURE.md), so this undercount doesn't
+ * happen in practice today - but the query is written to stay correct once
+ * one exists, which is also why the two numbers are reported separately
+ * rather than as a ratio.
  */
 async function fetchTotals(linkId: string, from: string, to: string): Promise<TotalsRow> {
   const [row] = await prisma.$queryRaw<TotalsRow[]>`

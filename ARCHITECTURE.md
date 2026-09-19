@@ -233,9 +233,11 @@ is the documented next step, not implemented here.
 - CORS is restricted to configured origins; `helmet` sets standard security
   headers; the API trusts exactly one reverse-proxy hop for `X-Forwarded-For`
   (configurable), not an unbounded chain a client could spoof.
-- Click IP addresses are geo-resolved once, then the address itself is
-  nulled out after a retention window - the derived country/city survive
-  for analytics, the raw IP does not persist indefinitely.
+- Click IP addresses are geo-resolved once; the derived country/city are
+  what analytics actually reads. The schema (`clicks.ip_address`, nullable)
+  and `IP_RETENTION_DAYS` are already in place for a job to null the raw
+  address out after that window, but that job isn't built yet - see
+  [What's next](#whats-next).
 - Every write path (link create, link edit) - not just the redirect read
   path - is checked against the URL blocklist.
 
@@ -254,3 +256,7 @@ order they'd be fun to build:
 4. **Account linking** for a user who wants to add a second sign-in method
    to an existing account - deliberately out of scope now, since doing it
    safely needs its own confirmation flow, not a quick addition.
+5. **The click-IP retention job.** The schema and `IP_RETENTION_DAYS`
+   already anticipate it (`clicks.ip_address` is nullable specifically for
+   this), but nothing nulls the address out yet - it persists indefinitely
+   today.

@@ -28,8 +28,8 @@ it is deliberately not the focus of this project.
   family-based reuse detection.
 - **Link management** - owner-scoped CRUD, search, status and created-date
   filters, inline destination editing, active/inactive toggle.
-- **Analytics** - clicks over time, unique visitors (IP-deduplicated per
-  day), top countries, device and browser breakdown, top referrers, all
+- **Analytics** - clicks over time, unique visitors (IP-deduplicated over
+  the selected window), top countries, device and browser breakdown, top referrers, all
   served from real-time async-ingested click data.
 - **Abuse protection** - a Redis Lua sliding-window rate limiter with
   separate anonymous/authenticated tiers per route, and a configurable

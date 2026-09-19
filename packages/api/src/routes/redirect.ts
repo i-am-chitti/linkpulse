@@ -23,7 +23,7 @@ export const redirectRouter: Router = Router();
  * optionalAuth before rateLimit: a browser click never carries a bearer
  * token, so in practice every redirect is rate-limited on the anonymous
  * tier - the authenticated tier exists for a programmatic caller that
- * attaches one, per spec section 2.3.
+ * attaches one.
  */
 // The explicit param type is needed because mixing several middleware in
 // one array defeats Express 5's route-string param inference, which would

@@ -25,8 +25,8 @@ function linkIdFrom(rawId: string): string {
  *
  * getLink throws 404 for a link the caller does not own, so this also settles
  * guest links: they have no owner, so nobody can read their analytics - which
- * is the "guest mode has no analytics" rule from spec section 2.1, enforced by
- * the data model rather than by a separate check.
+ * is the "guest mode has no analytics" rule, enforced by the data model
+ * rather than by a separate check.
  */
 async function assertOwnership(userId: string, linkId: string): Promise<void> {
   await getLink(userId, linkId);

@@ -1,4 +1,4 @@
-// LinkPulse data model. See docs/PROJECT_SPEC.md sections 4.1 and 4.2.
+// LinkPulse data model.
 //
 // Naming: models are camelCase in TypeScript and snake_case in Postgres via
 // @map, so SQL written by hand (migrations, analytics, k6 seeding) reads
@@ -140,9 +140,9 @@ model Click {
 
   linkId String @map("link_id") @db.Uuid
 
-  /// Nulled in place by the retention job after IP_RETENTION_DAYS, which is
-  /// why this is nullable despite the spec. Derived columns below survive, so
-  /// analytics stay intact once the address itself is gone.
+  /// Nullable so a future retention job can null it out after
+  /// IP_RETENTION_DAYS without a migration - not built yet, see
+  /// ARCHITECTURE.md. Derived columns below would survive that job intact.
   ipAddress String? @map("ip_address") @db.Inet
 
   country String?

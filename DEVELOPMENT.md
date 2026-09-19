@@ -47,7 +47,9 @@ pnpm docker:up
 | `pnpm test`                 | Run all test suites                                                           |
 | `pnpm typecheck`            | Type-check without emitting                                                   |
 | `pnpm lint`                 | ESLint across the workspace                                                   |
+| `pnpm lint:fix`             | ESLint across the workspace, applying autofixes                               |
 | `pnpm format`               | Prettier write                                                                |
+| `pnpm format:check`         | Prettier check only, no writes (what CI runs)                                 |
 | `pnpm docker:up`            | Dev stack up (`docker compose up -d`)                                         |
 | `pnpm docker:down`          | Dev stack down, data preserved (no `-v` - the named volume survives)          |
 | `pnpm e2e:reset`            | Isolated e2e stack: fresh containers, fresh database, migrations applied      |

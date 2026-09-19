@@ -4,7 +4,7 @@ import type { ReferrerClicks } from '@linkpulse/shared';
  * A table, not a chart. Referrer names are the point (twitter.com vs
  * news.ycombinator.com vs direct), and per the dataviz method a list where
  * the identity of each row matters more than a bar comparing it to the next
- * is exactly the "not a chart" case - spec section 2.2 asks for the same.
+ * is exactly the "not a chart" case.
  */
 export function TopReferrersTable({ referrers }: { referrers: ReferrerClicks[] }) {
   if (referrers.length === 0) {

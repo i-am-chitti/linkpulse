@@ -42,12 +42,12 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).max(3600).default(60),
   /** Unauthenticated POST /api/shorten. Spec section 2.3. */
   RATE_LIMIT_ANON_CREATE_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).default(10),
-  /** Unauthenticated GET /:shortCode. Spec section 2.3. */
+  /** Unauthenticated GET /:shortCode. */
   RATE_LIMIT_ANON_REDIRECT_PER_MINUTE: z.coerce.number().int().min(1).max(1_000_000).default(100),
   /**
    * Authenticated API traffic. One shared bucket per user rather than one per
-   * endpoint: spec section 5.2 lists the same 50/min for every /api/links*
-   * route, which is one limit wearing several names, not several limits.
+   * endpoint, since every /api/links* route wants the same limit - one
+   * limit wearing several names, not several limits.
    */
   RATE_LIMIT_USER_API_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).default(50),
   /** Redirects made with a bearer token attached. Spec section 2.3. */

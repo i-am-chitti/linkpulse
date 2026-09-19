@@ -13,8 +13,7 @@ import type { Response } from 'express';
 export const authRouter: Router = Router();
 
 /**
- * Not in spec section 5.3, which lists no rate limit for these routes: added
- * as a floor against credential stuffing and account-creation spam. One
+ * A floor against credential stuffing and account-creation spam. One
  * shared per-IP budget across register/login/refresh/oauth, tighter than
  * plain link creation, since these are the routes an attacker automates
  * first. Exported so routes/oauth.ts shares this bucket rather than a
