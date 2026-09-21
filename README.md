@@ -93,7 +93,9 @@ local file. Full reasoning: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 k6 load tests against the redirect hot path, link creation, analytics reads,
 and a mixed workload. Full setup and how to reproduce: [`benchmarks/README.md`](benchmarks/README.md).
-Latest run:
+Latest run - **local**, against the Docker Compose stack on a developer
+laptop (Apple M2 Pro, 10 cores, 16 GB), k6 on the same machine; not the
+live EC2 instance:
 
 | Scenario                                             | Target                | Achieved RPS                   | P95  | Errors |
 | ---------------------------------------------------- | --------------------- | ------------------------------ | ---- | ------ |

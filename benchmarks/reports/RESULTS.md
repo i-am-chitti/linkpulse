@@ -2,9 +2,13 @@
 
 Generated 2026-09-15T06:03:21.544Z.
 
-Run with `docker-compose.loadtest.yml` layered over the base stack (elevated
-rate limits only, so the limiter never throttles the load generator itself -
-see that file and `benchmarks/README.md`).
+Run **locally**: k6 and the whole Docker Compose stack (api, worker, Redis,
+Postgres) on one developer machine, with `docker-compose.loadtest.yml`
+layered over the base stack (elevated rate limits only, so the limiter never
+throttles the load generator itself - see that file and
+`benchmarks/README.md`). Not a measurement of the live deployment.
+
+Machine: Apple M2 Pro (6 performance + 4 efficiency cores), 16 GB RAM.
 
 | Scenario | Endpoint | Target | Achieved RPS | P50 | P95 | P99 | Errors | Thresholds |
 |---|---|---|---|---|---|---|---|---|
