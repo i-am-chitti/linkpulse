@@ -131,3 +131,7 @@ Honest gaps, not oversights left unmentioned:
   webhooks - out of scope for what this project sets out to demonstrate.
 - **No metrics/tracing backend.** Structured JSON logs (Pino) exist
   throughout; there is no Prometheus/Grafana/OpenTelemetry wiring.
+
+## License
+
+[MIT](LICENSE)

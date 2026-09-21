@@ -2,6 +2,7 @@
   "name": "linkpulse",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "High-performance URL shortener with real-time analytics",
   "engines": {
     "node": ">=24",
