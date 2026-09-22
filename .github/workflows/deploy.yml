@@ -32,7 +32,9 @@ jobs:
           file: packages/web/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/linkpulse-web:prod
-          build-args: NEXT_PUBLIC_API_URL=
+          build-args: |
+            NEXT_PUBLIC_API_URL=
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.TURNSTILE_SITE_KEY }}
 
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
@@ -72,6 +74,7 @@ jobs:
           GITHUB_CLIENT_SECRET=${{ secrets.GH_OAUTH_CLIENT_SECRET }}
           GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TURNSTILE_SECRET_KEY=${{ secrets.TURNSTILE_SECRET_KEY }}
           EOF
 
       - name: Copy compose files and start

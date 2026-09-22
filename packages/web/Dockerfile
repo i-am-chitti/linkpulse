@@ -22,6 +22,9 @@ COPY packages/web packages/web
 # read at container start - a build arg is the only way to configure this.
 ARG NEXT_PUBLIC_API_URL=http://localhost:4001
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Empty by default: no key, no widget, and the API skips the check too.
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 # shared must be built first: web imports its emitted .d.ts and .js.
 RUN pnpm --filter @linkpulse/shared build && pnpm --filter @linkpulse/web build
 

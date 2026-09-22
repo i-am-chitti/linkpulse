@@ -43,6 +43,8 @@ services:
       GITHUB_CLIENT_SECRET: '${GITHUB_CLIENT_SECRET:-}'
       GOOGLE_CLIENT_ID: '${GOOGLE_CLIENT_ID:-}'
       GOOGLE_CLIENT_SECRET: '${GOOGLE_CLIENT_SECRET:-}'
+      # Unset: the register and guest-shorten captcha is skipped.
+      TURNSTILE_SECRET_KEY: '${TURNSTILE_SECRET_KEY:-}'
       URL_BLOCKLIST: '${URL_BLOCKLIST:-malware.testing.google.test,testsafebrowsing.appspot.com}'
     depends_on:
       redis:
