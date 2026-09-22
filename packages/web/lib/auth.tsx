@@ -16,7 +16,7 @@ interface AuthContextValue {
   /** True while the initial session restore is in flight, on first load. */
   isLoading: boolean;
   login: (input: LoginInput) => Promise<void>;
-  register: (input: RegisterInput) => Promise<void>;
+  register: (input: RegisterInput, captchaToken?: string | null) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -67,10 +67,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(session.user);
   }
 
-  async function register(input: RegisterInput): Promise<void> {
+  /**
+   * captchaToken travels beside the input rather than inside it: it is a
+   * transport concern the API strips before the register schema ever sees
+   * it, not part of RegisterInput.
+   */
+  async function register(input: RegisterInput, captchaToken?: string | null): Promise<void> {
     const session = await apiFetch<SessionResponse>('/api/auth/register', {
       method: 'POST',
-      body: input,
+      body: captchaToken ? { ...input, captchaToken } : input,
       skipAuthRetry: true,
     });
     setAccessToken(session.accessToken);

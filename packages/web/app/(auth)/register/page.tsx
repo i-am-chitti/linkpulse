@@ -11,6 +11,7 @@ import type { RegisterInput } from '@linkpulse/shared';
 import { ApiError } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
 import { emptyToUndefined } from '../../../lib/zodHelpers';
+import { CaptchaField, captchaRequired } from '../../../components/CaptchaField';
 import { OAuthButtons } from '../../../components/OAuthButtons';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -27,6 +28,7 @@ export default function RegisterPage() {
   const { register: registerUser } = useAuth();
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const {
     register,
@@ -36,10 +38,16 @@ export default function RegisterPage() {
 
   async function onSubmit(input: RegisterInput) {
     setFormError(null);
+    if (captchaRequired && !captchaToken) {
+      setFormError('Please complete the captcha.');
+      return;
+    }
     try {
-      await registerUser(input);
+      await registerUser(input, captchaToken);
       router.push('/dashboard');
     } catch (error) {
+      // The token is single-use: a failed submit must not be retried with it.
+      setCaptchaToken(null);
       setFormError(error instanceof ApiError ? error.message : 'Something went wrong.');
     }
   }
@@ -68,6 +76,7 @@ export default function RegisterPage() {
           error={errors.password?.message}
           {...register('password')}
         />
+        <CaptchaField onToken={setCaptchaToken} />
         {formError && <p className="text-sm text-red-600">{formError}</p>}
         <Button type="submit" isLoading={isSubmitting}>
           Create account

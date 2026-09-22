@@ -7,6 +7,7 @@ import { shortenGuestSchema } from '@linkpulse/shared';
 import type { LinkDto, ShortenGuestInput } from '@linkpulse/shared';
 import { apiFetch, ApiError } from '../lib/api';
 import { copyToClipboard } from '../lib/clipboard';
+import { CaptchaField, captchaRequired } from './CaptchaField';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 
@@ -21,6 +22,7 @@ export function GuestShortenForm() {
   const [result, setResult] = useState<LinkDto | null>(null);
   const [copied, setCopied] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const {
     register,
@@ -31,12 +33,21 @@ export function GuestShortenForm() {
 
   async function onSubmit(input: ShortenGuestInput) {
     setFormError(null);
+    if (captchaRequired && !captchaToken) {
+      setFormError('Please complete the captcha.');
+      return;
+    }
     try {
-      const link = await apiFetch<LinkDto>('/api/shorten', { method: 'POST', body: input });
+      const link = await apiFetch<LinkDto>('/api/shorten', {
+        method: 'POST',
+        body: captchaToken ? { ...input, captchaToken } : input,
+      });
       setResult(link);
       setCopied(false);
       reset();
     } catch (error) {
+      // The token is single-use: a failed submit must not be retried with it.
+      setCaptchaToken(null);
       setFormError(error instanceof ApiError ? error.message : 'Something went wrong.');
     }
   }
@@ -63,6 +74,8 @@ export function GuestShortenForm() {
           Shorten
         </Button>
       </form>
+
+      <CaptchaField onToken={setCaptchaToken} />
 
       {formError && <p className="text-sm text-red-600">{formError}</p>}
 
