@@ -33,7 +33,8 @@ it is deliberately not the focus of this project.
   served from real-time async-ingested click data.
 - **Abuse protection** - a Redis Lua sliding-window rate limiter with
   separate anonymous/authenticated tiers per route, a per-IP link-creation
-  budget that holds across accounts, a per-account link quota, and a
+  budget that holds across accounts, a per-account link quota, an optional
+  Cloudflare Turnstile challenge on the anonymous browser forms, and a
   configurable malicious-URL blocklist checked on every create and edit.
 - **Background maintenance** - expired guest links and stale refresh tokens
   purged automatically by the click worker.

@@ -103,6 +103,44 @@ but allows up to 2x the intended rate at window boundaries (a burst just
 before and just after a window resets). The blended sliding window bounds
 that to the configured rate regardless of timing.
 
+### Abuse: quotas and a captcha, not just request rates
+
+A rate limit alone bounds how fast one identity acts, and accounts are free,
+so an identity is not a scarce resource: one IP registering N accounts gets
+N times the per-user budget, and every link it creates is permanent. Three
+layers close that, each doing what the others cannot:
+
+- **A per-IP link-creation budget** on `POST /api/links`, charged in
+  addition to the per-user limit and keyed by IP no matter which account is
+  signed in - so registering more accounts buys no extra creation rate from
+  one machine.
+- **A per-account link quota** (`MAX_LINKS_PER_USER`), which bounds stored
+  rows rather than request rate: without it an account can stay just under
+  the rate ceiling forever and still grow the table without limit.
+- **Cloudflare Turnstile** on the two anonymous browser forms (register,
+  guest shorten), optional and off unless `TURNSTILE_SECRET_KEY` is set.
+
+Turnstile guards the forms, not the API: a script can still call
+`/api/shorten` directly, which is what the first two layers are for. It
+raises the cost of the path bulk signup traffic actually arrives on, and
+nothing more - it is a second line, not the boundary.
+
+**Alternative rejected: reCAPTCHA.** Same integration shape, but it loads
+Google tracking scripts onto every page carrying it and obliges a privacy
+disclosure. Turnstile is invisible for most visitors and adds no such
+dependency.
+
+**Alternative rejected: requiring email verification to sign up.** A
+stronger bound on disposable accounts than any captcha, and the natural next
+step - but it needs a mail provider, a deliverability story, and a token
+lifecycle, none of which this project otherwise has a reason to run.
+
+**Alternative rejected: fail-open captcha verification.** The rate limiter
+deliberately fails open when Redis is down, because it still bounds nothing
+worse than normal traffic if skipped. Turnstile verification fails _closed_:
+skipping it leaves the form it guards completely unguarded, so a Cloudflare
+outage blocking signups is the safer failure.
+
 ### Malicious-URL blocklist: a static domain list, not Safe Browsing API
 
 Link creation and destination edits check the target hostname (and its
