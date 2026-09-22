@@ -7,7 +7,7 @@ import { shortenGuestSchema } from '@linkpulse/shared';
 import type { LinkDto, ShortenGuestInput } from '@linkpulse/shared';
 import { apiFetch, ApiError } from '../lib/api';
 import { copyToClipboard } from '../lib/clipboard';
-import { CaptchaField, captchaRequired } from './CaptchaField';
+import { CaptchaField, captchaRequired, CAPTCHA_PROMPT } from './CaptchaField';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 
@@ -34,7 +34,7 @@ export function GuestShortenForm() {
   async function onSubmit(input: ShortenGuestInput) {
     setFormError(null);
     if (captchaRequired && !captchaToken) {
-      setFormError('Please complete the captcha.');
+      setFormError(CAPTCHA_PROMPT);
       return;
     }
     try {
@@ -98,7 +98,12 @@ export function GuestShortenForm() {
         aliases, and click analytics.
       </p>
 
-      <CaptchaField onToken={setCaptchaToken} />
+      <CaptchaField
+        onToken={(token) => {
+          setCaptchaToken(token);
+          if (token) setFormError((current) => (current === CAPTCHA_PROMPT ? null : current));
+        }}
+      />
     </div>
   );
 }

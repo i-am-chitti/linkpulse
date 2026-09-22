@@ -11,7 +11,7 @@ import type { RegisterInput } from '@linkpulse/shared';
 import { ApiError } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
 import { emptyToUndefined } from '../../../lib/zodHelpers';
-import { CaptchaField, captchaRequired } from '../../../components/CaptchaField';
+import { CaptchaField, captchaRequired, CAPTCHA_PROMPT } from '../../../components/CaptchaField';
 import { OAuthButtons } from '../../../components/OAuthButtons';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -39,7 +39,7 @@ export default function RegisterPage() {
   async function onSubmit(input: RegisterInput) {
     setFormError(null);
     if (captchaRequired && !captchaToken) {
-      setFormError('Please complete the captcha.');
+      setFormError(CAPTCHA_PROMPT);
       return;
     }
     try {
@@ -80,7 +80,12 @@ export default function RegisterPage() {
         <Button type="submit" isLoading={isSubmitting}>
           Create account
         </Button>
-        <CaptchaField onToken={setCaptchaToken} />
+        <CaptchaField
+          onToken={(token) => {
+            setCaptchaToken(token);
+            if (token) setFormError((current) => (current === CAPTCHA_PROMPT ? null : current));
+          }}
+        />
       </form>
       <div className="mt-4">
         <OAuthButtons />

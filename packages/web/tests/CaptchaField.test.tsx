@@ -10,6 +10,7 @@ const { CaptchaField, captchaRequired } = await import('../components/CaptchaFie
 
 interface RenderOptions {
   sitekey: string;
+  theme: string;
   callback: (token: string) => void;
   'expired-callback': () => void;
   'error-callback': () => void;
@@ -46,6 +47,13 @@ describe('CaptchaField, with a site key', () => {
 
     await waitFor(() => expect(lastOptions?.sitekey).toBe('test-site-key'));
     expect(screen.getByTestId('captcha')).toBeInTheDocument();
+  });
+
+  it('pins the widget to the light theme these pages are built for', async () => {
+    render(<CaptchaField onToken={vi.fn()} />);
+
+    await waitFor(() => expect(lastOptions).toBeDefined());
+    expect(lastOptions!.theme).toBe('light');
   });
 
   it('hands a solved token to the parent', async () => {

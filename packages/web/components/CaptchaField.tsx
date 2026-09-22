@@ -8,6 +8,7 @@ interface TurnstileApi {
     container: HTMLElement,
     options: {
       sitekey: string;
+      theme: 'light' | 'dark' | 'auto';
       callback: (token: string) => void;
       'expired-callback': () => void;
       'error-callback': () => void;
@@ -78,6 +79,9 @@ export function CaptchaField({ onToken }: { onToken: (token: string | null) => v
         if (cancelled || !window.turnstile) return;
         widgetId = window.turnstile.render(container, {
           sitekey: TURNSTILE_SITE_KEY,
+          // Pinned, not the 'auto' default: auto follows the visitor's OS
+          // setting and renders a dark widget on these light-only pages.
+          theme: 'light',
           callback: (token) => onTokenRef.current(token),
           // Tokens are single-use and expire after ~5 minutes: clear, so the
           // form blocks rather than submitting a stale one.
@@ -101,3 +105,10 @@ export function CaptchaField({ onToken }: { onToken: (token: string | null) => v
 }
 
 export const captchaRequired = Boolean(TURNSTILE_SITE_KEY);
+
+/**
+ * Shown when a form is submitted before the challenge resolves. Shared so a
+ * form can retract it once the token lands, rather than leaving the visitor
+ * told to solve a captcha that already says Success.
+ */
+export const CAPTCHA_PROMPT = 'Please complete the captcha.';

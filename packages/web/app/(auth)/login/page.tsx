@@ -9,7 +9,7 @@ import { loginSchema } from '@linkpulse/shared';
 import type { LoginInput } from '@linkpulse/shared';
 import { ApiError } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
-import { CaptchaField, captchaRequired } from '../../../components/CaptchaField';
+import { CaptchaField, captchaRequired, CAPTCHA_PROMPT } from '../../../components/CaptchaField';
 import { OAuthButtons } from '../../../components/OAuthButtons';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -30,7 +30,7 @@ export default function LoginPage() {
   async function onSubmit(input: LoginInput) {
     setFormError(null);
     if (captchaRequired && !captchaToken) {
-      setFormError('Please complete the captcha.');
+      setFormError(CAPTCHA_PROMPT);
       return;
     }
     try {
@@ -69,7 +69,12 @@ export default function LoginPage() {
         <Button type="submit" isLoading={isSubmitting}>
           Sign in
         </Button>
-        <CaptchaField onToken={setCaptchaToken} />
+        <CaptchaField
+          onToken={(token) => {
+            setCaptchaToken(token);
+            if (token) setFormError((current) => (current === CAPTCHA_PROMPT ? null : current));
+          }}
+        />
       </form>
       <div className="mt-4">
         <OAuthButtons />
