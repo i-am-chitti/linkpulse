@@ -15,7 +15,7 @@ interface AuthContextValue {
   user: PublicUser | null;
   /** True while the initial session restore is in flight, on first load. */
   isLoading: boolean;
-  login: (input: LoginInput) => Promise<void>;
+  login: (input: LoginInput, captchaToken?: string | null) => Promise<void>;
   register: (input: RegisterInput, captchaToken?: string | null) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -57,10 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  async function login(input: LoginInput): Promise<void> {
+  async function login(input: LoginInput, captchaToken?: string | null): Promise<void> {
     const session = await apiFetch<SessionResponse>('/api/auth/login', {
       method: 'POST',
-      body: input,
+      body: captchaToken ? { ...input, captchaToken } : input,
       skipAuthRetry: true,
     });
     setAccessToken(session.accessToken);

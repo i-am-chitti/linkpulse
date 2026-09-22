@@ -65,6 +65,25 @@ describe('verifyCaptchaToken', () => {
   });
 });
 
+describe('the routes the challenge guards', () => {
+  it('gates register, login and guest shorten, and nothing else', async () => {
+    const { createApp } = await import('../../src/app.js');
+    const app = createApp();
+    const request = (await import('supertest')).default;
+
+    // No token supplied: a guarded route rejects before it reaches its own
+    // handler, so a 400 naming the captcha is the proof it is wired on.
+    for (const path of ['/api/auth/register', '/api/auth/login', '/api/shorten']) {
+      const res = await request(app).post(path).send({});
+      expect(res.body.error?.message, `${path} is not behind the captcha`).toMatch(/captcha/i);
+    }
+
+    // Refresh shares the auth rate-limit bucket but is not a browser form.
+    const refresh = await request(app).post('/api/auth/refresh').send({});
+    expect(refresh.body.error?.message ?? '').not.toMatch(/captcha/i);
+  });
+});
+
 describe('requireCaptcha, configured', () => {
   function runMiddleware(body: unknown) {
     const next = vi.fn();

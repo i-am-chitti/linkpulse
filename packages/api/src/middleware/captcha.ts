@@ -8,7 +8,7 @@ import { isCaptchaConfigured, verifyCaptchaToken } from '../lib/captcha.js';
  * and link quota instead (ARCHITECTURE.md).
  *
  * Read off req.body, not through the route's Zod schema: captchaToken is a
- * transport concern, not part of the register/shorten input.
+ * transport concern, not part of the register/login/shorten input.
  */
 export function requireCaptcha(): RequestHandler {
   return async (req, _res, next) => {

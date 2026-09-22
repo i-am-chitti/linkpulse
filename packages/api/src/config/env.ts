@@ -144,7 +144,7 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
 
   /**
-   * Turnstile secret for the register and guest-shorten challenge. Optional
+   * Turnstile secret for the register, login and guest-shorten challenge. Optional
    * on the same terms as the OAuth credentials: unset skips the check. Its
    * site key is a web build arg, not a server secret.
    */

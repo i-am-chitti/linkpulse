@@ -9,6 +9,7 @@ import { loginSchema } from '@linkpulse/shared';
 import type { LoginInput } from '@linkpulse/shared';
 import { ApiError } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
+import { CaptchaField, captchaRequired } from '../../../components/CaptchaField';
 import { OAuthButtons } from '../../../components/OAuthButtons';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const {
     register,
@@ -27,10 +29,16 @@ export default function LoginPage() {
 
   async function onSubmit(input: LoginInput) {
     setFormError(null);
+    if (captchaRequired && !captchaToken) {
+      setFormError('Please complete the captcha above.');
+      return;
+    }
     try {
-      await login(input);
+      await login(input, captchaToken);
       router.push('/dashboard');
     } catch (error) {
+      // The token is single-use: a failed sign-in must not be retried with it.
+      setCaptchaToken(null);
       // Deliberately generic on the client too: the API already returns the
       // same message for a wrong password and an unknown email, so a
       // per-field error here would just re-introduce the enumeration this
@@ -57,6 +65,7 @@ export default function LoginPage() {
           error={errors.password?.message}
           {...register('password')}
         />
+        <CaptchaField onToken={setCaptchaToken} />
         {formError && <p className="text-sm text-red-600">{formError}</p>}
         <Button type="submit" isLoading={isSubmitting}>
           Sign in

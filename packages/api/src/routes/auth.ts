@@ -56,14 +56,15 @@ function sendSession(res: Response, status: number, session: IssuedSession): voi
   });
 }
 
-// Not login: a captcha there would charge every returning user for an
-// attack authRateLimit already bounds.
 authRouter.post('/api/auth/register', authRateLimit, requireCaptcha(), async (req, res) => {
   const input = registerSchema.parse(req.body);
   sendSession(res, 201, await register(input));
 });
 
-authRouter.post('/api/auth/login', authRateLimit, async (req, res) => {
+// Challenged as well as rate limited: authRateLimit bounds how fast one IP
+// can guess, the captcha raises the per-attempt cost for a script working
+// through a credential list from many IPs.
+authRouter.post('/api/auth/login', authRateLimit, requireCaptcha(), async (req, res) => {
   const input = loginSchema.parse(req.body);
   sendSession(res, 200, await login(input));
 });
