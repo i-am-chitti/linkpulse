@@ -127,8 +127,8 @@ nothing more - it is a second line, not the boundary.
 
 **Alternative rejected: reCAPTCHA.** Same integration shape, but it loads
 Google tracking scripts onto every page carrying it and obliges a privacy
-disclosure. Turnstile is invisible for most visitors and adds no such
-dependency.
+disclosure. Turnstile adds no such dependency, and in `interaction-only`
+mode shows nothing at all to a visitor it does not need to challenge.
 
 **Alternative rejected: requiring email verification to sign up.** A
 stronger bound on disposable accounts than any captcha, and the natural next

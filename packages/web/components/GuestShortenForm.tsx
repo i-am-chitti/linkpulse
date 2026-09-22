@@ -34,7 +34,7 @@ export function GuestShortenForm() {
   async function onSubmit(input: ShortenGuestInput) {
     setFormError(null);
     if (captchaRequired && !captchaToken) {
-      setFormError('Please complete the captcha.');
+      setFormError('Still verifying you are human. Try again in a moment.');
       return;
     }
     try {
