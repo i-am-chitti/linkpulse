@@ -1,5 +1,20 @@
-import 'dotenv/config';
+import { existsSync } from 'node:fs';
+import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
+
+// Not `import 'dotenv/config'`: it resolves .env against the process cwd, and
+// pnpm runs each package from its own directory, leaving the workspace-root
+// .env invisible. Same lookup order as prisma.config.ts. Skipped under test,
+// where vitest.config.ts supplies the environment and a developer's .env would
+// make results machine-dependent.
+if (process.env.NODE_ENV !== 'test') {
+  for (const path of ['.env', '../../.env']) {
+    if (existsSync(path)) {
+      loadDotenv({ path, quiet: true });
+      break;
+    }
+  }
+}
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
