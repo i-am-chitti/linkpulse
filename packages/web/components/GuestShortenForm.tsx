@@ -34,7 +34,7 @@ export function GuestShortenForm() {
   async function onSubmit(input: ShortenGuestInput) {
     setFormError(null);
     if (captchaRequired && !captchaToken) {
-      setFormError('Please complete the captcha above.');
+      setFormError('Please complete the captcha.');
       return;
     }
     try {
@@ -75,8 +75,6 @@ export function GuestShortenForm() {
         </Button>
       </form>
 
-      <CaptchaField onToken={setCaptchaToken} />
-
       {formError && <p className="text-sm text-red-600">{formError}</p>}
 
       {result && (
@@ -99,6 +97,8 @@ export function GuestShortenForm() {
         No account needed - this link expires in 24 hours. Sign up for permanent links, custom
         aliases, and click analytics.
       </p>
+
+      <CaptchaField onToken={setCaptchaToken} />
     </div>
   );
 }

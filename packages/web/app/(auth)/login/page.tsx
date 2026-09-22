@@ -30,7 +30,7 @@ export default function LoginPage() {
   async function onSubmit(input: LoginInput) {
     setFormError(null);
     if (captchaRequired && !captchaToken) {
-      setFormError('Please complete the captcha above.');
+      setFormError('Please complete the captcha.');
       return;
     }
     try {
@@ -65,11 +65,11 @@ export default function LoginPage() {
           error={errors.password?.message}
           {...register('password')}
         />
-        <CaptchaField onToken={setCaptchaToken} />
         {formError && <p className="text-sm text-red-600">{formError}</p>}
         <Button type="submit" isLoading={isSubmitting}>
           Sign in
         </Button>
+        <CaptchaField onToken={setCaptchaToken} />
       </form>
       <div className="mt-4">
         <OAuthButtons />
