@@ -34,6 +34,9 @@ export const notFound = (message = 'Resource not found') => new AppError(404, 'N
 
 export const conflict = (message: string) => new AppError(409, 'CONFLICT', message);
 
+/** A per-account ceiling was hit. 403 not 429: waiting will not clear it. */
+export const quotaExceeded = (message: string) => new AppError(403, 'QUOTA_EXCEEDED', message);
+
 export const gone = (message = 'This link is no longer available') =>
   new AppError(410, 'GONE', message);
 

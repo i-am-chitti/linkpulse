@@ -32,8 +32,9 @@ it is deliberately not the focus of this project.
   the selected window), top countries, device and browser breakdown, top referrers, all
   served from real-time async-ingested click data.
 - **Abuse protection** - a Redis Lua sliding-window rate limiter with
-  separate anonymous/authenticated tiers per route, and a configurable
-  malicious-URL blocklist checked on every create and edit.
+  separate anonymous/authenticated tiers per route, a per-IP link-creation
+  budget that holds across accounts, a per-account link quota, and a
+  configurable malicious-URL blocklist checked on every create and edit.
 - **Background maintenance** - expired guest links and stale refresh tokens
   purged automatically by the click worker.
 - **CI/CD** - lint, typecheck, build and test on every push/PR; Docker

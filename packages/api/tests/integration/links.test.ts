@@ -4,6 +4,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
+import { env } from '../../src/config/env.js';
 import { prisma } from '../../src/lib/prisma.js';
 import { redis } from '../../src/lib/redis.js';
 
@@ -176,6 +177,52 @@ describe('POST /api/links', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error.message).toMatch(/blocklist/i);
+  });
+
+  it('refuses to exceed the per-account link quota', async () => {
+    const actor = await signUp('owner@example.com');
+    // MAX_LINKS_PER_USER is set to a small value in vitest.config.ts.
+    await prisma.link.createMany({
+      data: Array.from({ length: env.MAX_LINKS_PER_USER }, (_, i) => ({
+        shortCode: `quota${i}`,
+        originalUrl: 'https://example.com/seed',
+        userId: actor.userId,
+      })),
+    });
+
+    const res = await createLinkRaw(actor, { url: 'https://example.com/one-more' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('QUOTA_EXCEEDED');
+  });
+
+  it('counts the quota per account, not globally', async () => {
+    const full = await signUp('full@example.com');
+    const other = await signUp('other@example.com');
+    await prisma.link.createMany({
+      data: Array.from({ length: env.MAX_LINKS_PER_USER }, (_, i) => ({
+        shortCode: `quotb${i}`,
+        originalUrl: 'https://example.com/seed',
+        userId: full.userId,
+      })),
+    });
+
+    await createLink(other, { url: 'https://example.com/fine' });
+  });
+
+  it('frees quota when a link is deleted', async () => {
+    const actor = await signUp('owner@example.com');
+    await prisma.link.createMany({
+      data: Array.from({ length: env.MAX_LINKS_PER_USER }, (_, i) => ({
+        shortCode: `quotc${i}`,
+        originalUrl: 'https://example.com/seed',
+        userId: actor.userId,
+      })),
+    });
+    const { id } = await prisma.link.findFirstOrThrow({ where: { shortCode: 'quotc0' } });
+
+    await asActor(actor)(request(app).delete(`/api/links/${id}`)).expect(204);
+    await createLink(actor, { url: 'https://example.com/room-again' });
   });
 });
 

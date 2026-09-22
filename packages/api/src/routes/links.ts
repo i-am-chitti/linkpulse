@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { createLinkSchema, listLinksQuerySchema, updateLinkSchema } from '@linkpulse/shared';
+import { env } from '../config/env.js';
 import { notFound } from '../lib/errors.js';
 import { toLinkDto } from '../lib/serialize.js';
 import { actorOf } from '../middleware/auth.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 import { deleteLink, getLink, listLinks, updateLink } from '../services/linkService.js';
 import { createLink } from '../services/urlService.js';
 
@@ -29,20 +31,34 @@ function linkIdFrom(rawId: string): string {
   return rawId;
 }
 
-/** Create a link with the full feature set: custom alias, chosen expiry. */
-linksRouter.post('/api/links', async (req, res) => {
-  const input = createLinkSchema.parse(req.body);
-  const actor = actorOf(req);
+/**
+ * Create a link with the full feature set: custom alias, chosen expiry.
+ *
+ * On top of the shared per-user limit from app.ts, creation is also budgeted
+ * per IP across accounts: registration is free, so a per-user limit alone
+ * scales with however many accounts one machine signs up.
+ */
+linksRouter.post(
+  '/api/links',
+  rateLimit({
+    bucket: 'create-ip',
+    anonLimit: env.RATE_LIMIT_CREATE_PER_IP_PER_MINUTE,
+    identify: 'ip',
+  }),
+  async (req, res) => {
+    const input = createLinkSchema.parse(req.body);
+    const actor = actorOf(req);
 
-  const link = await createLink({
-    url: input.url,
-    userId: actor.id,
-    customAlias: input.customAlias,
-    expiresAt: input.expiresAt ?? null,
-  });
+    const link = await createLink({
+      url: input.url,
+      userId: actor.id,
+      customAlias: input.customAlias,
+      expiresAt: input.expiresAt ?? null,
+    });
 
-  res.status(201).json(toLinkDto(link));
-});
+    res.status(201).json(toLinkDto(link));
+  },
+);
 
 linksRouter.get('/api/links', async (req, res) => {
   const query = listLinksQuerySchema.parse(req.query);

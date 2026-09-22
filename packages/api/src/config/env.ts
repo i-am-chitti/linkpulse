@@ -57,6 +57,20 @@ const envSchema = z.object({
    * than plain link creation, as a floor against credential stuffing.
    */
   RATE_LIMIT_AUTH_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).default(20),
+  /**
+   * Authenticated POST /api/links, keyed by IP regardless of which user is
+   * signed in. The per-user API limit alone is bypassable: accounts are free,
+   * so one IP registering N accounts gets N times the per-user budget. This
+   * bounds link creation per IP no matter how many accounts it holds.
+   */
+  RATE_LIMIT_CREATE_PER_IP_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).default(30),
+
+  /**
+   * Links one account may own at once. Rate limits bound how fast a bot can
+   * create links; this bounds how many it ends up with, so an account cannot
+   * grow the table without limit by staying just under the rate ceiling.
+   */
+  MAX_LINKS_PER_USER: z.coerce.number().int().min(1).max(1_000_000).default(500),
 
   /**
    * Known-malicious domains, comma-separated, checked by hostname/subdomain

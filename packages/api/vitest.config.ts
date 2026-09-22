@@ -46,6 +46,9 @@ export default defineConfig({
       RATE_LIMIT_USER_API_PER_MINUTE: '100000',
       RATE_LIMIT_USER_REDIRECT_PER_MINUTE: '100000',
       RATE_LIMIT_AUTH_PER_MINUTE: '100000',
+      RATE_LIMIT_CREATE_PER_IP_PER_MINUTE: '100000',
+      // Small enough that links.test.ts can seed up to it in one createMany.
+      MAX_LINKS_PER_USER: '40',
     },
   },
 });

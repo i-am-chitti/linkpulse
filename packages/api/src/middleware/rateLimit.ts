@@ -17,6 +17,12 @@ export interface RateLimitOptions {
    * Omit for a route that is never authenticated (guest shortening, login).
    */
   userLimit?: number;
+  /**
+   * 'actor' (default): user id when authenticated, IP otherwise.
+   * 'ip': always the IP, even for an authenticated caller - for budgets that
+   * must hold across every account one machine can register.
+   */
+  identify?: 'actor' | 'ip';
 }
 
 /**
@@ -32,7 +38,7 @@ export interface RateLimitOptions {
  * the reverse proxy every request arrives through.
  */
 export function rateLimit(options: RateLimitOptions): RequestHandler {
-  const { bucket, anonLimit, userLimit } = options;
+  const { bucket, anonLimit, userLimit, identify = 'actor' } = options;
 
   if (anonLimit === undefined && userLimit === undefined) {
     // A setup-time mistake, not a request-time one: fail loudly at boot
@@ -49,12 +55,19 @@ export function rateLimit(options: RateLimitOptions): RequestHandler {
   return async (req, res, next) => {
     const authenticated = Boolean(req.actor);
     const limit = authenticated ? effectiveUserLimit : effectiveAnonLimit;
-    const identifier = authenticated ? `user:${req.actor!.id}` : `ip:${req.ip}`;
+    const identifier =
+      authenticated && identify === 'actor' ? `user:${req.actor!.id}` : `ip:${req.ip}`;
 
     const result = await consumeRateLimit(bucket, identifier, limit, env.RATE_LIMIT_WINDOW_SECONDS);
 
-    res.set('X-RateLimit-Limit', String(result.limit));
-    res.set('X-RateLimit-Remaining', String(Math.max(0, result.limit - result.count)));
+    // A route behind two limiters (POST /api/links: per-user, then per-IP)
+    // reports whichever has the least headroom left, not whichever ran last.
+    const remaining = Math.max(0, result.limit - result.count);
+    const reported = res.get('X-RateLimit-Remaining');
+    if (reported === undefined || remaining < Number(reported)) {
+      res.set('X-RateLimit-Limit', String(result.limit));
+      res.set('X-RateLimit-Remaining', String(remaining));
+    }
 
     if (!result.allowed) {
       res.set('Retry-After', String(result.retryAfterSeconds));

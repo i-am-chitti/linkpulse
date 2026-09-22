@@ -199,6 +199,47 @@ describe('/api/links* - shared authenticated api tier', () => {
   });
 });
 
+describe('POST /api/links - per-IP create budget across accounts', () => {
+  async function createFrom(ip: string, token: string) {
+    return request(app)
+      .post('/api/links')
+      .set('X-Forwarded-For', ip)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ url: 'https://example.com' });
+  }
+
+  it('charges one IP for creates made by different accounts', async () => {
+    const ip = freshIp();
+    const tokenA = await registerFrom(freshIp());
+    const tokenB = await registerFrom(freshIp());
+
+    const first = await createFrom(ip, tokenA);
+    const second = await createFrom(ip, tokenB);
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    // Read the bucket directly: the response headers report the tighter of
+    // the two limiters on this route, which is not necessarily this one.
+    const keys = await redis.keys(`rate:create-ip:ip:${ip}:*`);
+    expect(keys.length).toBeGreaterThan(0);
+    const counts = await Promise.all(keys.map((k) => redis.get(k)));
+    expect(counts.map(Number).reduce((a, b) => a + b, 0)).toBe(2);
+  });
+
+  it('does not charge a different IP', async () => {
+    const token = await registerFrom(freshIp());
+    const ipA = freshIp();
+    const ipB = freshIp();
+
+    await createFrom(ipA, token);
+    await createFrom(ipB, token);
+
+    const keysB = await redis.keys(`rate:create-ip:ip:${ipB}:*`);
+    const counts = await Promise.all(keysB.map((k) => redis.get(k)));
+    expect(counts.map(Number).reduce((a, b) => a + b, 0)).toBe(1);
+  });
+});
+
 describe('/api/auth/* - shared auth tier', () => {
   it('reports the configured auth limit on register', async () => {
     const res = await request(app)

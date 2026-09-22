@@ -1,8 +1,9 @@
 import { GUEST_LINK_TTL_HOURS, RESERVED_SHORT_CODES } from '@linkpulse/shared';
 import { Prisma } from '../generated/prisma/client.js';
 import type { Link } from '../generated/prisma/client.js';
+import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
-import { conflict } from '../lib/errors.js';
+import { conflict, quotaExceeded } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { assertUrlNotBlocked } from '../lib/urlBlocklist.js';
 import { generateShortCode } from '../utils/base62.js';
@@ -94,6 +95,7 @@ export async function createLink(options: CreateLinkOptions): Promise<Link> {
   const { url, userId = null, customAlias, expiresAt = null } = options;
 
   assertUrlNotBlocked(url);
+  if (userId) await assertUnderLinkQuota(userId);
 
   if (customAlias) {
     // Belt and braces: the validator rejects reserved aliases, but this is the
@@ -124,6 +126,20 @@ export async function createLink(options: CreateLinkOptions): Promise<Link> {
   }
 
   throw new Error(`could not allocate a unique short code after ${MAX_CODE_ATTEMPTS} attempts`);
+}
+
+/**
+ * Count-then-insert, not a database constraint: two concurrent creates at
+ * the boundary can overshoot by one, which is harmless for a ceiling whose
+ * job is to stop unbounded growth, not to be exact.
+ */
+async function assertUnderLinkQuota(userId: string): Promise<void> {
+  const owned = await prisma.link.count({ where: { userId } });
+  if (owned >= env.MAX_LINKS_PER_USER) {
+    throw quotaExceeded(
+      `You have reached the limit of ${env.MAX_LINKS_PER_USER} links. Delete some to create more.`,
+    );
+  }
 }
 
 /** Guest links are unowned and short-lived. */
