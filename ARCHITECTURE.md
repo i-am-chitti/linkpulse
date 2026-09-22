@@ -117,7 +117,7 @@ layers close that, each doing what the others cannot:
 - **A per-account link quota** (`MAX_LINKS_PER_USER`), which bounds stored
   rows rather than request rate: without it an account can stay just under
   the rate ceiling forever and still grow the table without limit.
-- **Cloudflare Turnstile** on the two anonymous browser forms (register,
+- **Cloudflare Turnstile** on the anonymous browser forms (register, login,
   guest shorten), optional and off unless `TURNSTILE_SECRET_KEY` is set.
 
 Turnstile guards the forms, not the API: a script can still call
@@ -127,8 +127,8 @@ nothing more - it is a second line, not the boundary.
 
 **Alternative rejected: reCAPTCHA.** Same integration shape, but it loads
 Google tracking scripts onto every page carrying it and obliges a privacy
-disclosure. Turnstile adds no such dependency, and in `interaction-only`
-mode shows nothing at all to a visitor it does not need to challenge.
+disclosure. Turnstile adds no such dependency and resolves itself without
+input from most visitors.
 
 **Alternative rejected: requiring email verification to sign up.** A
 stronger bound on disposable accounts than any captcha, and the natural next

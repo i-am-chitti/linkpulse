@@ -121,7 +121,7 @@ OAuth needs `GITHUB_CLIENT_ID`/`SECRET` or `GOOGLE_CLIENT_ID`/`SECRET` in
 `.env` (see `.env.example`) - unset, the buttons still round-trip through
 the API and land on a real error page rather than a dead link.
 
-The register and guest-shorten forms can be put behind a Cloudflare
+The register, login and guest-shorten forms can be put behind a Cloudflare
 Turnstile challenge. Both halves switch on together: `TURNSTILE_SECRET_KEY`
 in `.env` for the API, and `TURNSTILE_SITE_KEY` for the web build arg
 (inlined as `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, so it needs a rebuild, not
