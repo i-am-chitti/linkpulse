@@ -129,9 +129,8 @@ export async function createLink(options: CreateLinkOptions): Promise<Link> {
 }
 
 /**
- * Count-then-insert, not a database constraint: two concurrent creates at
- * the boundary can overshoot by one, which is harmless for a ceiling whose
- * job is to stop unbounded growth, not to be exact.
+ * Count-then-insert: concurrent creates at the boundary can overshoot by
+ * one, harmless for a ceiling meant to stop unbounded growth, not to be exact.
  */
 async function assertUnderLinkQuota(userId: string): Promise<void> {
   const owned = await prisma.link.count({ where: { userId } });

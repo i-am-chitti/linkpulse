@@ -34,9 +34,8 @@ function linkIdFrom(rawId: string): string {
 /**
  * Create a link with the full feature set: custom alias, chosen expiry.
  *
- * On top of the shared per-user limit from app.ts, creation is also budgeted
- * per IP across accounts: registration is free, so a per-user limit alone
- * scales with however many accounts one machine signs up.
+ * Budgeted per IP on top of app.ts's per-user limit, since registration is
+ * free and a per-user limit alone scales with accounts signed up.
  */
 linksRouter.post(
   '/api/links',

@@ -18,9 +18,9 @@ export interface RateLimitOptions {
    */
   userLimit?: number;
   /**
-   * 'actor' (default): user id when authenticated, IP otherwise.
-   * 'ip': always the IP, even for an authenticated caller - for budgets that
-   * must hold across every account one machine can register.
+   * 'ip' keys on the IP even for an authenticated caller, for a budget that
+   * must hold across every account one machine registers. Default 'actor'
+   * keys on the user id once authenticated.
    */
   identify?: 'actor' | 'ip';
 }
@@ -60,8 +60,8 @@ export function rateLimit(options: RateLimitOptions): RequestHandler {
 
     const result = await consumeRateLimit(bucket, identifier, limit, env.RATE_LIMIT_WINDOW_SECONDS);
 
-    // A route behind two limiters (POST /api/links: per-user, then per-IP)
-    // reports whichever has the least headroom left, not whichever ran last.
+    // A route behind two limiters reports whichever has least headroom, not
+    // whichever ran last.
     const remaining = Math.max(0, result.limit - result.count);
     const reported = res.get('X-RateLimit-Remaining');
     if (reported === undefined || remaining < Number(reported)) {
