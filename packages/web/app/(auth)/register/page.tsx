@@ -39,7 +39,7 @@ export default function RegisterPage() {
   async function onSubmit(input: RegisterInput) {
     setFormError(null);
     if (captchaRequired && !captchaToken) {
-      setFormError('Still verifying you are human. Try again in a moment.');
+      setFormError('Please complete the captcha above.');
       return;
     }
     try {

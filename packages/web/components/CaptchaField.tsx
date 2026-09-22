@@ -8,7 +8,6 @@ interface TurnstileApi {
     container: HTMLElement,
     options: {
       sitekey: string;
-      appearance: 'always' | 'execute' | 'interaction-only';
       callback: (token: string) => void;
       'expired-callback': () => void;
       'error-callback': () => void;
@@ -79,9 +78,6 @@ export function CaptchaField({ onToken }: { onToken: (token: string | null) => v
         if (cancelled || !window.turnstile) return;
         widgetId = window.turnstile.render(container, {
           sitekey: TURNSTILE_SITE_KEY,
-          // Shown only to a visitor Cloudflare actually wants to challenge;
-          // everyone else gets a token silently and sees nothing.
-          appearance: 'interaction-only',
           callback: (token) => onTokenRef.current(token),
           // Tokens are single-use and expire after ~5 minutes: clear, so the
           // form blocks rather than submitting a stale one.
@@ -99,9 +95,8 @@ export function CaptchaField({ onToken }: { onToken: (token: string | null) => v
 
   if (!TURNSTILE_SITE_KEY) return null;
 
-  // w-fit so the box collapses to the injected iframe - zero-height until a
-  // challenge is actually shown - and mx-auto to centre the ~300px widget,
-  // which would otherwise sit out of line with the fields above it.
+  // w-fit keeps the box to the injected iframe's own width, mx-auto centres
+  // it: at ~300px it would otherwise sit out of line with the fields above.
   return <div ref={containerRef} data-testid="captcha" className="mx-auto w-fit" />;
 }
 
