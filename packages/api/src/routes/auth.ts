@@ -3,6 +3,7 @@ import { loginSchema, registerSchema } from '@linkpulse/shared';
 import { env, isProduction } from '../config/env.js';
 import type { RequestHandler } from 'express';
 import { requireAuth, actorOf } from '../middleware/auth.js';
+import { requireCaptcha } from '../middleware/captcha.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { prisma } from '../lib/prisma.js';
 import { notFound } from '../lib/errors.js';
@@ -55,7 +56,9 @@ function sendSession(res: Response, status: number, session: IssuedSession): voi
   });
 }
 
-authRouter.post('/api/auth/register', authRateLimit, async (req, res) => {
+// Not login: a captcha there would charge every returning user for an
+// attack authRateLimit already bounds.
+authRouter.post('/api/auth/register', authRateLimit, requireCaptcha(), async (req, res) => {
   const input = registerSchema.parse(req.body);
   sendSession(res, 201, await register(input));
 });

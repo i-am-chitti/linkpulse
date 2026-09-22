@@ -58,17 +58,16 @@ const envSchema = z.object({
    */
   RATE_LIMIT_AUTH_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).default(20),
   /**
-   * Authenticated POST /api/links, keyed by IP regardless of which user is
-   * signed in. The per-user API limit alone is bypassable: accounts are free,
-   * so one IP registering N accounts gets N times the per-user budget. This
-   * bounds link creation per IP no matter how many accounts it holds.
+   * POST /api/links, keyed by IP whoever is signed in. The per-user limit
+   * alone is bypassable: accounts are free, so one IP registering N of them
+   * gets N times that budget.
    */
   RATE_LIMIT_CREATE_PER_IP_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).default(30),
 
   /**
-   * Links one account may own at once. Rate limits bound how fast a bot can
-   * create links; this bounds how many it ends up with, so an account cannot
-   * grow the table without limit by staying just under the rate ceiling.
+   * Links one account may own at once. Rate limits bound how fast links are
+   * created; this bounds how many exist, which staying just under a rate
+   * ceiling forever would otherwise leave unbounded.
    */
   MAX_LINKS_PER_USER: z.coerce.number().int().min(1).max(1_000_000).default(500),
 
@@ -143,6 +142,13 @@ const envSchema = z.object({
   GITHUB_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  /**
+   * Turnstile secret for the register and guest-shorten challenge. Optional
+   * on the same terms as the OAuth credentials: unset skips the check. Its
+   * site key is a web build arg, not a server secret.
+   */
+  TURNSTILE_SECRET_KEY: z.string().optional(),
 });
 
 /**

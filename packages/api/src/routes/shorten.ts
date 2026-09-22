@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { shortenGuestSchema } from '@linkpulse/shared';
 import { env } from '../config/env.js';
 import { toLinkDto } from '../lib/serialize.js';
+import { requireCaptcha } from '../middleware/captcha.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { createGuestLink } from '../services/urlService.js';
 
@@ -17,6 +18,9 @@ export const shortenRouter: Router = Router();
 shortenRouter.post(
   '/api/shorten',
   rateLimit({ bucket: 'create', anonLimit: env.RATE_LIMIT_ANON_CREATE_PER_MINUTE }),
+  // After the rate limit: a flood should cost a Redis check, not a round
+  // trip to Cloudflare per request.
+  requireCaptcha(),
   async (req, res) => {
     const { url } = shortenGuestSchema.parse(req.body);
     const link = await createGuestLink(url);
